@@ -10,23 +10,31 @@ The Front of House Productions (FOHP) web application is currently in the **init
 - ✅ Technical stack has been selected
 - ✅ Memory bank documentation has been established
 - ✅ System architecture has been designed
+- ✅ Development environment setup with proper Next.js configuration
+- ✅ Next.js development server running successfully
+- ✅ Vercel hosting configured and deployed
+- ✅ Hosting and deployment documentation created
+- ✅ Supabase integration plan documented
+- ✅ Database schema successfully implemented in Supabase
+- ✅ Row Level Security policies established for all tables
 
 ## What's In Progress
 
 - 🔄 Preparing for project repository initialization
-- 🔄 Setting up development environment
-- 🔄 Planning database schema design
+- 🔄 Development of initial components
+- 🔄 Connecting frontend to Supabase via environment variables
 
 ## What's Left to Build
 
 ### Foundation Components
 - [ ] Project repository setup
-- [ ] Next.js application with TypeScript and Tailwind CSS
-- [ ] Supabase project and connection
-- [ ] Authentication system
+- [x] Next.js application with TypeScript and Tailwind CSS
+- [✅] Supabase client setup and integration
+- [✅] Authentication system components
 - [ ] Base layout components
 - [ ] Responsive design framework
-- [ ] App Router structure
+- [x] App Router structure
+- [x] Vercel deployment configuration
 
 ### Landing Page
 - [ ] Hero section
@@ -75,27 +83,33 @@ The Front of House Productions (FOHP) web application is currently in the **init
 - [ ] Purchase request approval system
 
 ### Cross-Cutting Concerns
-- [ ] Database implementation
+- [✅] Database schema design
 - [ ] Push notification system
 - [ ] Mobile responsiveness
-- [ ] Security implementation
+- [✅] Security implementation with RLS
 - [ ] Testing suite
-- [ ] CI/CD pipeline
-- [ ] Deployment infrastructure
+- [x] CI/CD pipeline
+- [x] Deployment infrastructure
 
 ## Known Issues
 
-As the project is in the initialization phase, there are no implementation-specific issues yet. However, several challenges have been identified:
+As the project is in the initialization phase, there are only a few implementation-specific issues that have been identified:
 
-1. **Integration Complexity**: The integration with existing inventory management systems and Google Workspace will require careful planning and implementation.
+1. **Module System Compatibility**: Next.js 15+ with files using .mjs extension must use ES Module syntax (export default) rather than CommonJS (module.exports). We encountered and resolved this issue with the PostCSS configuration.
 
-2. **RFID Implementation**: Implementing the RFID scanning feature will require research into browser capabilities and possible native app bridges.
+2. **Integration Complexity**: The integration with existing inventory management systems and Google Workspace will require careful planning and implementation.
 
-3. **Multi-Role Security**: Designing a security system that properly handles the different user roles (customers, employees, managers) will require careful implementation of row-level security in Supabase.
+3. **RFID Implementation**: Implementing the RFID scanning feature will require research into browser capabilities and possible native app bridges.
 
-4. **Offline Functionality**: For employees in the field, some level of offline functionality may be required, which adds complexity to the application design.
+4. **Multi-Role Security**: We've designed a Row-Level Security system in the database schema to handle different user roles (customers, employees, managers), but we'll need to thoroughly test this implementation.
 
-5. **File Storage**: Managing potentially large files (photos, videos, documents) efficiently will require careful implementation of storage and retrieval mechanisms.
+5. **Offline Functionality**: For employees in the field, some level of offline functionality may be required, which adds complexity to the application design.
+
+6. **File Storage**: Managing potentially large files (photos, videos, documents) efficiently will require careful implementation of storage and retrieval mechanisms. The database schema now includes a documents table to track files.
+
+7. **Supabase Auth Helpers Deprecation**: The @supabase/auth-helpers-nextjs package is deprecated in favor of @supabase/ssr. We've installed both but are using the newer recommended package.
+
+8. **SQL Syntax Errors**: Encountered and resolved a SQL syntax error in the migration script where `ALTER SCHEMA public REPLICA IDENTITY FULL;` was incorrectly used. REPLICA IDENTITY is for tables, not schemas. Replaced with UUID extension creation for proper function availability.
 
 ## Next Milestones
 

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://lhwdfcbrvulotvjtyfjy.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxod2RmY2JydnVsb3R2anR5Zmp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNzA2ODksImV4cCI6MjA1Nzc0NjY4OX0.rY23K34pnBFc5YOuUVnABVUtN--wuvQx3lzTu6XwS_U"
+  },
+  "github": {
+    "enabled": true,
+    "silent": true
+  }
+}

@@ -42,3 +42,12 @@ DO NOT read or modify:
 - .env files
 - **/config/secrets.*
 - Any file containing API keys or credentials
+
+## Technical Learnings
+
+### Next.js Module System
+
+- Next.js 15+ configuration files with `.mjs` extension must use ES Module syntax (`export default`) rather than CommonJS (`module.exports`)
+- This applies to configuration files like postcss.config.mjs, tailwind.config.mjs, etc.
+- Files with `.js` extension can continue to use CommonJS syntax
+- Mixing module systems incorrectly leads to "module is not defined in ES module scope" errors
