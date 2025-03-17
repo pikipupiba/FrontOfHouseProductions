@@ -1,5 +1,10 @@
 # System Patterns
 
+**File Purpose**: Document system architecture, design patterns, and component relationships  
+**Related Files**: [techContext.md](techContext.md), [activeContext.md](activeContext.md)  
+**Archive References**: [architecture-details.md](archive/architecture-details.md), [implementation-details.md](archive/implementation-details.md)  
+**Navigation**: For complete memory bank navigation, see [index.md](index.md)
+
 ## Architecture Overview
 
 The Front of House Productions (FOHP) web application follows a modern web application architecture with clear separation of concerns:

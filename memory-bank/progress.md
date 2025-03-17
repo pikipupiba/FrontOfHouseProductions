@@ -1,42 +1,15 @@
 # Progress
 
+**File Purpose**: Track project status, in-progress work, and upcoming tasks  
+**Related Files**: [activeContext.md](activeContext.md), [systemPatterns.md](systemPatterns.md)  
+**Archive References**: [completed-milestones.md](archive/completed-milestones.md), [resolved-issues.md](archive/resolved-issues.md)  
+**Navigation**: For complete memory bank navigation, see [index.md](index.md)
+
 ## Project Status: Portal Development Phase
 
 The Front of House Productions (FOHP) web application has moved from the foundation phase to the **portal development phase**. We have established the core infrastructure with functioning hosting, authentication, and database components. Role-based portals have been implemented with proper navigation and access control. A live version of the application is now available at https://front-of-house-productions.vercel.app/.
 
-## What Works
-
-- ✅ Project requirements and scope have been defined
-- ✅ Technical stack has been selected
-- ✅ Memory bank documentation has been established
-- ✅ System architecture has been designed
-- ✅ Development environment setup with proper Next.js configuration
-- ✅ Next.js development server running successfully
-- ✅ Vercel hosting configured and deployed
-- ✅ Hosting and deployment documentation created
-- ✅ Supabase integration plan documented
-- ✅ Database schema successfully implemented in Supabase
-- ✅ Row Level Security policies established for all tables
-- ✅ GitHub repository setup and connected to Vercel for CI/CD
-- ✅ Authentication system components implemented
-- ✅ Client and server components properly structured
-- ✅ Live application deployed at https://front-of-house-productions.vercel.app/
-- ✅ Services page implemented with service offerings and features
-- ✅ Equipment page implemented with categorized equipment listings
-- ✅ Portfolio page implemented with project showcase and testimonials
-- ✅ About page implemented with company history, values, and team information
-- ✅ Contact page implemented with contact form and location information
-- ✅ Navigation links working correctly, including authentication flows
-- ✅ User profile management with account details editing
-- ✅ Role-based portal interfaces (customer, employee, manager)
-- ✅ Role-based security with Supabase RLS policies
-- ✅ Development tools for testing different roles
-- ✅ Direct URL access to role-specific portals
-- ✅ Profile access from all role-specific portals
-- ✅ Role-appropriate portal redirects after profile updates
-- ✅ Simplified navigation structure with role-specific portals
-- ✅ Direct navigation from login to appropriate portal
-- ✅ Portal selector with URL-aware active state
+> **Note**: Completed milestones have been archived to `memory-bank/archive/completed-milestones.md`
 
 ## What's In Progress
 
@@ -51,36 +24,6 @@ The Front of House Productions (FOHP) web application has moved from the foundat
 - 🔄 Setting up expanded tech stack with new libraries
 
 ## What's Left to Build
-
-### Foundation Components
-- [✅] Project repository setup
-- [✅] Next.js application with TypeScript and Tailwind CSS
-- [✅] Supabase client setup and integration
-- [✅] Authentication system components
-- [✅] Base layout components
-- [✅] Responsive design framework
-- [✅] App Router structure
-- [✅] Vercel deployment configuration
-
-### Landing Page
-- [✅] Hero section
-- [✅] Mission statement
-- [✅] Previous work showcase
-- [✅] Equipment showcase
-- [✅] Website functions showcase
-- [✅] Customer reviews section
-- [✅] CTA (Call to Action) section
-- [✅] Contact information (via Contact page)
-
-### Authentication & Portal Framework
-- [✅] User registration and login
-- [✅] Profile management
-- [✅] Role-based portal system
-- [✅] Portal switching mechanism
-- [✅] Role-based security with RLS
-- [✅] Direct URL access to portals
-- [✅] Simplified navigation structure
-- [✅] Direct navigation from login to appropriate portal
 
 ### Integration Architecture
 - [✅] Core integration framework design
@@ -173,56 +116,23 @@ The Front of House Productions (FOHP) web application has moved from the foundat
   - [ ] Unit tests for CredentialsManager
   - [ ] Unit tests for SyncJob
   - [ ] Integration tests with mock services
-- [✅] CI/CD pipeline
-- [✅] Deployment infrastructure
 
-## Known Issues
+## Current Issues & Concerns
 
-As the project has moved through the foundation phase and into portal development, we've identified and addressed several implementation issues:
+1. **Integration Complexity**: The integration with existing inventory management systems and Google Workspace will require careful planning and implementation.
 
-1. **Vercel Environment Variable Truncation**: Fixed an "Invalid API key" error in the Vercel deployment (while local login worked fine) by correcting a truncated Supabase API key in the Vercel dashboard. The JWT tokens used as API keys are quite long and can get truncated when copying to environment variable fields.
+2. **RFID Implementation**: Implementing the RFID scanning feature will require research into browser capabilities and possible native app bridges.
 
-2. **Module System Compatibility**: Next.js 15+ with files using .mjs extension must use ES Module syntax (export default) rather than CommonJS (module.exports). We encountered and resolved this issue with the PostCSS configuration.
+3. **Offline Functionality**: For employees in the field, some level of offline functionality may be required, which adds complexity to the application design.
 
-3. **Integration Complexity**: The integration with existing inventory management systems and Google Workspace will require careful planning and implementation.
+4. **File Storage**: Managing potentially large files (photos, videos, documents) efficiently will require careful implementation of storage and retrieval mechanisms.
 
-4. **RFID Implementation**: Implementing the RFID scanning feature will require research into browser capabilities and possible native app bridges.
+5. **ESLint Configuration**: Currently ignoring ESLint errors during builds with `eslint.ignoreDuringBuilds: true` in Next.js config. We should address the specific ESLint issues (TypeScript 'any' types, unescaped entities, and unused imports).
 
-5. **Multi-Role Security**: We've designed a Row-Level Security system in the database schema to handle different user roles (customers, employees, managers), and have addressed infinite recursion in policy checks with security definer functions.
+> **Note**: Historical issues that have been resolved are documented in `memory-bank/archive/resolved-issues.md`
 
-6. **Offline Functionality**: For employees in the field, some level of offline functionality may be required, which adds complexity to the application design.
+## Current Milestones
 
-7. **File Storage**: Managing potentially large files (photos, videos, documents) efficiently will require careful implementation of storage and retrieval mechanisms. The database schema now includes a documents table to track files.
-
-8. **Supabase Auth Helpers Deprecation**: The @supabase/auth-helpers-nextjs package is deprecated in favor of @supabase/ssr. We're using the newer recommended package.
-
-9. **SQL Syntax Errors**: Encountered and resolved a SQL syntax error in the migration script where `ALTER SCHEMA public REPLICA IDENTITY FULL;` was incorrectly used. REPLICA IDENTITY is for tables, not schemas. Replaced with UUID extension creation for proper function availability.
-
-10. **ESLint Configuration**: Currently ignoring ESLint errors during builds with `eslint.ignoreDuringBuilds: true` in Next.js config. This was necessary to deploy successfully, but in the future, we should address the specific ESLint issues (TypeScript 'any' types, unescaped entities, and unused imports).
-
-11. **Client vs Server Components**: Identified and fixed issues with 'use client' directives in components. Properly separating client and server component code is critical for Next.js App Router architecture.
-
-12. **Metadata in Client Components**: Fixed conflicts between 'use client' directive and metadata exports in the Contact page by creating a separate layout.tsx file that handles metadata. This follows Next.js best practices for handling SEO metadata in client-side interactive pages.
-
-13. **Navigation Links**: Fixed links in the navigation bar that pointed to incorrect routes (e.g., "/login" instead of "/auth/login"), ensuring proper user flow throughout the site.
-
-14. **Redundant Dashboard Page**: ✅ RESOLVED: The generic dashboard page redundancy has been eliminated by replacing it with an auto-redirect to appropriate role-specific portals. The dashboard route now serves as a routing layer that directs users to their correct portal.
-
-15. **Multi-Integration Architecture**: ✅ DESIGNED: We've designed a comprehensive integration architecture with adapter pattern, caching strategy, and synchronization approach to handle multiple third-party integrations with different authentication methods (OAuth, API keys) and data formats. This provides a standardized approach for all external service integrations.
-
-## Next Milestones
-
-1. ✅ **Project Setup Complete**: Repository initialized, base Next.js application running, Supabase connected
-2. ✅ **Authentication System**: User registration, login, and role-based access control implemented
-3. ✅ **Landing Page Launched**: Public-facing components of the site functional
-4. ✅ **Complete User Authentication Flow**: Profile management and portal switching mechanism
-5. ✅ **Portal Framework**: Role-specific portals with direct profile access
-6. ✅ **Navigation Restructuring**: Removed redundant dashboard page with direct portal routing
-7. ✅ **Integration Architecture**: Implementation of adapter pattern and caching for external services
-   - ✅ Core integration framework with adapter pattern
-   - ✅ Database schema for cache tables
-   - ✅ Error handling and retry mechanisms
-   - ✅ Authentication and credential management
 8. **Current RMS Integration**: Equipment and rental management through Current RMS
    - Cache tables for Current RMS data
    - Adapter implementation for Current RMS API

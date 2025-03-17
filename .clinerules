@@ -62,3 +62,52 @@ DO NOT read or modify:
   - Creating multiple directories: `mkdir "dir1","dir2","dir3"` (comma-separated)
   - Creating files: `New-Item -ItemType File -Path "path\to\file"` or `ni "path\to\file"`
   - Creating paths with multiple directories: `mkdir -p "path\to\nested\dir"` will fail; use `New-Item -ItemType Directory -Path "path\to\nested\dir" -Force` instead
+
+### Integration Framework Patterns
+
+- **Adapter Pattern**: All external service integrations use a consistent adapter pattern
+  - BaseAdapter abstract class defines standard interface for all service adapters
+  - Service-specific adapters extend BaseAdapter with custom implementation
+  - IntegrationManager singleton coordinates all adapters and provides central access point
+- **Retry Strategy**: Exponential backoff with jitter for resilient API calls
+  - Configurable max attempts, base delay, and max delay
+  - Automatic categorization of errors as retryable or non-retryable
+  - Exponential increase in wait time between attempts with random jitter
+- **Caching Strategy**: Using Supabase tables as cache layer for external data
+  - Standard schema pattern with original_data, version, and sync_status fields
+  - Metadata tracking for sync status and timestamps
+  - Consistent invalidation strategies (time-based, version-based, action-based)
+- **Error Handling**: Comprehensive error handling with specific error types
+  - Categorized errors (authentication, rate limit, network, etc.)
+  - Consistent error format with operation, code, and message
+  - Propagation of external service errors with proper context
+
+### Testing Strategy
+
+- **Unit Testing**: Jest with TypeScript support
+  - Babel configuration to support ES Module syntax in tests
+  - Specific configuration in jest.config.js and .babelrc
+  - Component isolation with mock dependencies
+- **Integration Testing**: Testing adapters with mock services
+  - MSW for simulating external API responses
+  - Fixture data for predictable testing
+  - Comprehensive test coverage for error cases
+- **Mock Adapter Pattern**: Standard approach for testing integration components
+  - MockAdapter class implementing BaseAdapter interface
+  - Configurable responses and error scenarios
+  - Tracking of calls for verification
+
+### Role-Based Security Model
+
+- **Row Level Security**: Supabase RLS policies for data protection
+  - Security definer functions to avoid infinite recursion
+  - Role-specific policies with proper user identification
+  - Development-friendly policies for testing different roles
+- **Role Management**: Database-driven role assignments
+  - User roles stored in dedicated tables with RLS 
+  - Role change request system for changing access levels
+  - Automatic profile creation for new users
+- **UI Protection**: Role-specific portal access
+  - Server-side redirect protection for unauthorized access
+  - Client-side route guards with session validation
+  - Uniform portal switching mechanism across all role types
