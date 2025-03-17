@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 
 type PortalSelectorProps = {
   availableRoles: string[]
@@ -9,7 +9,14 @@ type PortalSelectorProps = {
 }
 
 export default function PortalSelector({ availableRoles, currentRole }: PortalSelectorProps) {
-  const [activeRole, setActiveRole] = useState(currentRole)
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  // Extract the current role from the URL path to ensure correct active state after navigation
+  const pathRole = pathname.split('/').pop()
+  const effectiveCurrentRole = availableRoles.includes(pathRole as string) 
+    ? pathRole as string 
+    : currentRole
   
   const roleLabels: Record<string, string> = {
     customer: 'Customer Portal',
@@ -33,6 +40,12 @@ export default function PortalSelector({ availableRoles, currentRole }: PortalSe
     return null
   }
   
+  const handlePortalSwitch = (role: string) => {
+    if (role !== effectiveCurrentRole) {
+      router.push(`/dashboard/${role}`)
+    }
+  }
+  
   return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold mb-4">Switch Portal</h2>
@@ -41,11 +54,14 @@ export default function PortalSelector({ availableRoles, currentRole }: PortalSe
           <div 
             key={role}
             className={`flex border rounded-lg p-4 cursor-pointer transition-colors ${
-              activeRole === role 
+              effectiveCurrentRole === role 
                 ? 'border-blue-500 bg-blue-50' 
                 : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
             }`}
-            onClick={() => setActiveRole(role)}
+            onClick={() => handlePortalSwitch(role)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Switch to ${roleLabels[role]}`}
           >
             <div className="flex-shrink-0 text-2xl mr-3">
               {roleIcons[role]}
@@ -53,17 +69,14 @@ export default function PortalSelector({ availableRoles, currentRole }: PortalSe
             <div>
               <h3 className="font-medium">{roleLabels[role]}</h3>
               <p className="text-sm text-gray-500">{roleDescriptions[role]}</p>
-              {activeRole === role ? (
+              {effectiveCurrentRole === role ? (
                 <span className="inline-flex items-center mt-2 text-xs text-blue-700 font-medium">
                   Currently active
                 </span>
               ) : (
-                <Link 
-                  href={`/dashboard/${role}`} 
-                  className="inline-flex items-center mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Switch to this portal
-                </Link>
+                <span className="inline-flex items-center mt-2 text-xs text-blue-600 font-medium">
+                  Click to switch
+                </span>
               )}
             </div>
           </div>

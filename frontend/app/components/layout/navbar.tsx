@@ -2,10 +2,73 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  
+  // Reference to dropdown container for click-outside handling
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      // Clean up the event listener
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Fetch user data
+  useEffect(() => {
+    async function loadUserSession() {
+      const supabase = createClient();
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (user) {
+        // Get user role from the user_roles table
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (roleData) {
+          setUserRole(roleData.role);
+        }
+      }
+      
+      setLoading(false);
+    }
+    
+    loadUserSession();
+  }, []);
+  
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    setDropdownOpen(false);
+    router.push('/');
+  };
 
   return (
     <nav className="bg-white shadow dark:bg-gray-900">
@@ -38,12 +101,82 @@ export default function Navbar() {
           </div>
           
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <Link 
-              href="/auth/login" 
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Login
-            </Link>
+            {!loading && (
+              <>
+                {user ? (
+                  <div className="relative" ref={dropdownRef}>
+                    <button 
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      aria-expanded={dropdownOpen}
+                      aria-haspopup="true"
+                    >
+                      <span>Account</span>
+                      <svg className="ml-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {dropdownOpen && (
+                      <div 
+                        className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                        role="menu"
+                        aria-orientation="vertical"
+                        aria-labelledby="user-menu-button"
+                      >
+                        {/* User info */}
+                        <div className="px-4 py-2 border-b">
+                          <p className="text-sm font-medium text-gray-700">{user.email}</p>
+                          {userRole && (
+                            <p className="text-xs text-gray-500 capitalize">{userRole} Portal</p>
+                          )}
+                        </div>
+                        
+                        {/* Menu items */}
+                        <Link 
+                          href="#" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          Notifications
+                        </Link>
+                        <Link 
+                          href={userRole ? `/dashboard/${userRole}` : "/dashboard"} 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          Show Dashboard
+                        </Link>
+                        <Link 
+                          href="/dashboard/profile" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          Edit Profile
+                        </Link>
+                        <button 
+                          onClick={handleSignOut}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link 
+                    href="/auth/login" 
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Login
+                  </Link>
+                )}
+              </>
+            )}
           </div>
           
           {/* Mobile menu button */}
@@ -90,9 +223,48 @@ export default function Navbar() {
             <Link href="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700">
               Contact
             </Link>
-            <Link href="/auth/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700">
-              Login
-            </Link>
+            {!loading && user ? (
+              <>
+                <div className="px-3 py-2 font-medium text-gray-700">
+                  <span className="block text-sm font-medium">{user.email}</span>
+                  {userRole && <span className="block text-xs text-gray-500 capitalize">{userRole} Portal</span>}
+                </div>
+                <Link 
+                  href="#" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Notifications
+                </Link>
+                <Link 
+                  href={userRole ? `/dashboard/${userRole}` : "/dashboard"} 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Show Dashboard
+                </Link>
+                <Link 
+                  href="/dashboard/profile" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Edit Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/auth/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700">
+                Login
+              </Link>
+            )}
           </div>
         </div>
       )}

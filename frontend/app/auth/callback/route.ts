@@ -28,8 +28,32 @@ export async function GET(request: NextRequest) {
     
     // Exchange the code for a session
     await supabase.auth.exchangeCodeForSession(code)
+    
+    // Determine the user's role to redirect them to the appropriate portal
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      // Get user role from the user_roles table
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role, is_approved')
+        .eq('user_id', user.id)
+        .single()
+      
+      if (userRole) {
+        // Redirect based on user role
+        if (userRole.role === 'manager' && userRole.is_approved) {
+          return NextResponse.redirect(new URL('/dashboard/manager', request.url))
+        } else if ((userRole.role === 'employee' || userRole.role === 'manager') && userRole.is_approved) {
+          return NextResponse.redirect(new URL('/dashboard/employee', request.url))
+        } else {
+          // Default to customer portal for customer role or unapproved roles
+          return NextResponse.redirect(new URL('/dashboard/customer', request.url))
+        }
+      }
+    }
   }
   
-  // URL to redirect to after sign in process completes
+  // Default URL to redirect to if user role can't be determined
   return NextResponse.redirect(new URL('/dashboard', request.url))
 }

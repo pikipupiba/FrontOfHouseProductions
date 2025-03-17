@@ -1,8 +1,5 @@
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import SignOutButton from './SignOutButton'
-import DashboardCard from './DashboardCard'
-import PortalSelector from './PortalSelector'
 
 export default async function Dashboard() {
   const supabase = await createServerClient()
@@ -51,90 +48,22 @@ export default async function Dashboard() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
+    
+    // Redirect to customer portal for new users
+    redirect('/dashboard/customer')
   }
   
-  // Determine available roles based on user_roles table
+  // Determine the appropriate portal to redirect to based on user role
   const currentRole = userRole?.role || 'customer'
   const isRoleApproved = userRole?.is_approved !== false
-  const availableRoles = ['customer']
   
-  // Only show roles that are approved
-  if (isRoleApproved) {
-    if (currentRole === 'employee' || currentRole === 'manager') {
-      availableRoles.push('employee')
-    }
-    
-    if (currentRole === 'manager') {
-      availableRoles.push('manager')
-    }
+  // Redirect based on user role
+  if (currentRole === 'manager' && isRoleApproved) {
+    redirect('/dashboard/manager')
+  } else if ((currentRole === 'employee' || currentRole === 'manager') && isRoleApproved) {
+    redirect('/dashboard/employee')
+  } else {
+    // Default to customer portal for customer role or unapproved roles
+    redirect('/dashboard/customer')
   }
-  
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-lg bg-white p-8 shadow-lg">
-          <div className="pb-5 border-b border-gray-200 mb-8">
-            <h1 className="text-3xl font-bold leading-tight text-gray-900">Dashboard</h1>
-          </div>
-          
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Welcome, {profile?.full_name || user?.email}!</h2>
-            <p className="text-gray-600">
-              You are now logged into the Front of House Productions portal. 
-              From here, you can manage your rentals, view your events, and more.
-            </p>
-            {!isRoleApproved && userRole && userRole.role !== 'customer' && (
-              <div className="mt-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-md">
-                Your {userRole.role} role is pending approval. Some features may be limited until approval.
-              </div>
-            )}
-          </div>
-          
-          {/* Portal selector component */}
-          {availableRoles.length > 1 && (
-            <PortalSelector 
-              availableRoles={availableRoles} 
-              currentRole={currentRole}
-            />
-          )}
-          
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Profile card - implemented */}
-            <DashboardCard 
-              title="My Profile" 
-              description="View and update your account information"
-              link="/dashboard/profile"
-              icon="👤"
-            />
-            
-            {/* These will be implemented later */}
-            <DashboardCard 
-              title="My Rentals" 
-              description="View and manage your equipment rentals"
-              link="#"
-              icon="📋"
-            />
-            
-            <DashboardCard 
-              title="Upload Files" 
-              description="Share event photos, videos, and documents"
-              link="#"
-              icon="📁"
-            />
-            
-            <DashboardCard 
-              title="Event Timeline" 
-              description="Track important dates and milestones"
-              link="#"
-              icon="📅"
-            />
-          </div>
-          
-          <div className="mt-8">
-            <SignOutButton />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }
