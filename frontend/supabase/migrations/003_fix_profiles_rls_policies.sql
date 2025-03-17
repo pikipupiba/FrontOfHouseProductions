@@ -48,12 +48,12 @@ CREATE POLICY "Managers can update all profiles"
     )
   );
 
--- Make sure users can insert their own profile
-CREATE POLICY "Users can insert their own profile" 
-  ON public.profiles 
-  FOR INSERT 
-  TO authenticated
-  WITH CHECK (id = (select auth.uid()));
+-- Policy for user profile insertion is already created in migration 002
+-- CREATE POLICY "Users can insert their own profile" 
+--   ON public.profiles 
+--   FOR INSERT 
+--   TO authenticated
+--   WITH CHECK (id = (select auth.uid()));
 
 -- Explicitly add delete policy for profiles
 CREATE POLICY "Users can delete their own profile" 

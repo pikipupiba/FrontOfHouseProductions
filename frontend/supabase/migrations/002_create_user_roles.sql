@@ -39,8 +39,11 @@ CREATE POLICY "Users can update their own customer role"
   TO authenticated
   USING (
     user_id = (select auth.uid()) AND 
-    OLD.role = 'customer' AND 
-    NEW.role = 'customer'
+    role = 'customer'
+  )
+  WITH CHECK (
+    user_id = (select auth.uid()) AND 
+    role = 'customer'
   );
 
 -- This policy is safe because it references itself but doesn't depend on

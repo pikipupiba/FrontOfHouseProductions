@@ -7,6 +7,8 @@ This directory contains SQL migration files for the Supabase database used in th
 - `001_initial_schema.sql` - Initial database schema with profiles, equipment, rentals, and documents tables
 - `002_create_user_roles.sql` - Creates a separate user_roles table to avoid circular dependencies
 - `003_fix_profiles_rls_policies.sql` - Fixes the infinite recursion by updating profiles table policies
+- `004_fix_user_roles_policies.sql` - Creates security definer functions to break circular dependencies in role checks
+- `005_add_developer_policy.sql` - Adds permissive policies for role management in development
 
 ## Applying Migrations
 
@@ -32,15 +34,19 @@ supabase db push
 4. Paste it into the SQL editor
 5. Click "Run" to execute the SQL
 
-## Migration 002 & 003: Fixing Infinite Recursion in RLS Policies
+## Migrations 002, 003, 004 & 005: Role Management and RLS Fixes
 
-These migrations address an infinite recursion issue in the Row Level Security (RLS) policies. The issue occurs because:
+These migrations address role management and Row Level Security (RLS) issues:
 
-1. The profiles table had a policy that checked if a user was a manager by querying the profiles table itself
-2. This created a circular dependency where checking permissions required checking permissions
-3. When trying to update a profile, Postgres detected the infinite recursion and failed
+1. **Migration 002**: Creates a separate `user_roles` table to avoid circular dependencies between tables
+2. **Migration 003**: Fixes policies on the profiles table to reference the user_roles table
+3. **Migration 004**: Creates SECURITY DEFINER functions to break circular dependencies within the user_roles table
+4. **Migration 005**: Adds development-friendly policies for testing different roles
 
-Migration 002 creates the user_roles table, while Migration 003 fixes the policies on the profiles table to use the new table instead.
+The issues occurred because:
+
+1. The profiles table had policies that checked the profiles table itself (fixed in 002 & 003)
+2. The user_roles table had policies that checked the user_roles table itself (fixed in 004)
 
 ### Changes Made in Migration 002:
 
@@ -56,6 +62,21 @@ Migration 002 creates the user_roles table, while Migration 003 fixes the polici
 3. Added proper policies for insert, update, and select operations
 4. Added a trigger to keep email in sync with auth.users
 5. Left the role field in the profiles table for now (for backward compatibility)
+
+### Changes Made in Migration 004:
+
+1. Created SECURITY DEFINER functions to bypass RLS during role checks:
+   - `is_manager()` - Checks if a user has manager role
+   - `is_employee_or_manager()` - Checks if a user has employee or manager role
+2. Updated all policies across tables to use these functions
+3. This breaks circular dependencies even within the same table
+
+### Changes Made in Migration 005:
+
+1. Replaced the restrictive "Users can update their own customer role" policy with a more permissive one
+2. Added an insert policy to allow users to create their own roles
+3. These changes enable the development tools for role testing
+4. Note: In production, you would want stricter policies in place
 
 ### User Experience Improvements:
 

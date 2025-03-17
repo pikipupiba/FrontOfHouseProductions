@@ -1,7 +1,9 @@
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import DashboardCard from '../DashboardCard'
 import SignOutButton from '../SignOutButton'
+import PortalSelector from '../PortalSelector'
 
 export default async function CustomerPortal() {
   const supabase = await createServerClient()
@@ -18,32 +20,73 @@ export default async function CustomerPortal() {
   const { data: { user } } = await supabase.auth.getUser()
   
   // Get profile details
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user?.id)
     .single()
   
-  // Ensure user has customer role (all users have this by default)
+  // In development, we don't enforce role-based access to allow testing
+  // For production, uncomment the following block to enforce role-based access
+  
+  // Get user role from the user_roles table
+  const { data: userRole, error: roleError } = await supabase
+    .from('user_roles')
+    .select('role, is_approved')
+    .eq('user_id', user?.id)
+    .single()
+  
+  // Debug what's happening with the profile and role fetches
+  console.log("Debug - User ID:", user?.id);
+  console.log("Debug - Profile:", profile ? "Found" : "Not Found");
+  console.log("Debug - Profile Error:", profileError?.message || "None");
+  console.log("Debug - User Role:", userRole?.role || "Not Found");
+  console.log("Debug - Role Error:", roleError?.message || "None");
+  
+  // TEMPORARILY REMOVE ALL REDIRECTS FOR TESTING
+  /* 
   if (!profile) {
     redirect('/dashboard')
+  }
+  */
+  
+  // Just log the actual role for debugging purposes
+  console.log("User actual role:", userRole?.role);
+  
+  // Determine available roles for portal selector
+  const currentRole = userRole?.role || 'customer'
+  const isRoleApproved = userRole?.is_approved !== false
+  const availableRoles = ['customer']
+  
+  // Only show roles that are approved
+  if (isRoleApproved) {
+    if (currentRole === 'employee' || currentRole === 'manager') {
+      availableRoles.push('employee')
+    }
+    
+    if (currentRole === 'manager') {
+      availableRoles.push('manager')
+    }
   }
   
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-lg bg-white p-8 shadow-lg">
-          <div className="flex justify-between items-center pb-5 border-b border-gray-200 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold leading-tight text-gray-900">Customer Portal</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage your rentals, events, and documents
-              </p>
-            </div>
-            <a href="/dashboard" className="text-sm text-blue-600 hover:text-blue-800">
-              Back to Dashboard
-            </a>
+          <div className="pb-5 border-b border-gray-200 mb-8">
+            <h1 className="text-3xl font-bold leading-tight text-gray-900">Customer Portal</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage your rentals, events, and documents
+            </p>
           </div>
+          
+          {/* Portal selector component */}
+          {availableRoles.length > 1 && (
+            <PortalSelector 
+              availableRoles={availableRoles} 
+              currentRole={currentRole}
+            />
+          )}
           
           <h2 className="text-xl font-semibold mb-4">Rentals & Events</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
@@ -93,6 +136,30 @@ export default async function CustomerPortal() {
             />
           </div>
           
+          <h2 className="text-xl font-semibold mb-4">My Account</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+            <DashboardCard 
+              title="My Profile" 
+              description="Update your account information and preferences"
+              link="/dashboard/profile"
+              icon="👤"
+            />
+            
+            <DashboardCard 
+              title="Billing Information" 
+              description="Manage your payment methods and billing history"
+              link="#"
+              icon="💳"
+            />
+            
+            <DashboardCard 
+              title="Notifications" 
+              description="Set up email and SMS alerts for your rentals"
+              link="#"
+              icon="🔔"
+            />
+          </div>
+          
           <h2 className="text-xl font-semibold mb-4">Support</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
             <DashboardCard 
@@ -110,20 +177,14 @@ export default async function CustomerPortal() {
             />
             
             <DashboardCard 
-              title="My Profile" 
-              description="Update your account information and preferences"
-              link="/dashboard/profile"
-              icon="👤"
+              title="Knowledge Base" 
+              description="Find answers to common questions and issues"
+              link="#"
+              icon="📚"
             />
           </div>
           
-          <div className="mt-8 flex justify-between">
-            <a 
-              href="/dashboard" 
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Back to Dashboard
-            </a>
+          <div className="mt-8 flex justify-end">
             <SignOutButton />
           </div>
         </div>

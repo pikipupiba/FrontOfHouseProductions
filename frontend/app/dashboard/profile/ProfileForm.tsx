@@ -110,24 +110,60 @@ export default function ProfileForm({
   const setRoleDirectly = async (role: string) => {
     setLoading(true)
     try {
-      const { error } = await supabase
+      // First check if a user_role record exists
+      const { data } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: user.id,
-          role: role,
-          is_approved: true,
-          updated_at: new Date().toISOString()
-        })
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
       
-      if (error) throw error
-      setMessage(`Role updated to ${role} successfully!`)
-      setFormData(prev => ({ ...prev, role }))
-      setOriginalRole(role)
-      router.refresh()
+      let error;
+      
+      // If a record exists, update it
+      if (data?.id) {
+        const result = await supabase
+          .from('user_roles')
+          .update({
+            role: role,
+            is_approved: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+          
+        error = result.error;
+      } else {
+        // If no record exists, insert one
+        const result = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: user.id,
+            role: role,
+            is_approved: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        error = result.error;
+      }
+      
+      if (error) throw error;
+      
+      setMessage(`Role updated to ${role} successfully!`);
+      setFormData(prev => ({ ...prev, role }));
+      setOriginalRole(role);
+      
+      // Redirect to the appropriate dashboard based on role
+      if (role === 'employee') {
+        window.location.href = "/dashboard/employee";
+      } else if (role === 'manager') {
+        window.location.href = "/dashboard/manager";
+      } else {
+        window.location.href = "/dashboard/customer";
+      }
     } catch (error: any) {
-      setMessage(`Error setting role: ${error.message}`)
+      setMessage(`Error setting role: ${error.message}`);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
   
@@ -275,7 +311,16 @@ export default function ProfileForm({
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => router.push('/dashboard')}
+          onClick={() => {
+            // Go back to the appropriate dashboard based on originalRole
+            if (originalRole === 'employee') {
+              router.push('/dashboard/employee');
+            } else if (originalRole === 'manager') {
+              router.push('/dashboard/manager');
+            } else {
+              router.push('/dashboard/customer');
+            }
+          }}
           className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Cancel
