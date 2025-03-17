@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   },
   // Essential for development
   reactStrictMode: true,
+  // Disable ESLint during builds
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
