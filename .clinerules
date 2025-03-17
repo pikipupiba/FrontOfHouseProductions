@@ -82,11 +82,24 @@ DO NOT read or modify:
   - Consistent error format with operation, code, and message
   - Propagation of external service errors with proper context
 
+### Next.js Compiler Configuration
+
+- **SWC vs Babel**: Next.js uses SWC by default, but falls back to Babel if a `.babelrc` file exists
+  - SWC is significantly faster than Babel for development and builds
+  - Some Next.js features like `next/font` specifically require SWC
+  - Custom Babel config can conflict with SWC features
+- **Jest Configuration**: Jest uses its own Babel config from jest.config.js
+  - No need for a separate `.babelrc` file if transform options are properly set in jest.config.js
+  - TypeScript files use ts-jest, while JavaScript files use babel-jest with Next.js preset
+- **Font Strategy**: Use next/font APIs for optimized font loading
+  - Enables automatic optimization, reduced CLS, and proper font loading
+  - Requires SWC to be enabled (no custom `.babelrc` file)
+
 ### Testing Strategy
 
 - **Unit Testing**: Jest with TypeScript support
   - Babel configuration to support ES Module syntax in tests
-  - Specific configuration in jest.config.js and .babelrc
+  - Specific configuration directly in jest.config.js
   - Component isolation with mock dependencies
 - **Integration Testing**: Testing adapters with mock services
   - MSW for simulating external API responses

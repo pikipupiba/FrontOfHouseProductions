@@ -13,6 +13,8 @@ The Front of House Productions (FOHP) web application has moved from the foundat
 
 ## What's In Progress
 
+- 🔄 Google OAuth authentication implementation
+- 🔄 Google Workspace integration planning
 - 🔄 Customer portal specific features development
 - 🔄 Integration architecture implementation for external services
 - 🔄 Current RMS integration planning for rental management
@@ -24,6 +26,14 @@ The Front of House Productions (FOHP) web application has moved from the foundat
 - 🔄 Setting up expanded tech stack with new libraries
 
 ## What's Left to Build
+
+### Authentication Enhancement
+- [✅] Google sign in/sign up buttons added to login/signup pages
+- [✅] Authentication callback handling for Google users
+- [✅] Profile display for Google authenticated users
+- [✅] Database migration for Google profile data
+- [🔄] Google OAuth configuration in Supabase
+- [ ] Additional OAuth providers (potential future addition)
 
 ### Integration Architecture
 - [✅] Core integration framework design
@@ -78,6 +88,13 @@ The Front of House Productions (FOHP) web application has moved from the foundat
 - [ ] Role change request approvals
 
 ### External Integrations
+- [🔄] Google Workspace Suite
+  - [🔄] Google Workspace adapter architecture
+  - [ ] Google Calendar integration (event timelines)
+  - [ ] Google Drive integration (document storage)
+  - [ ] Google Tasks integration (work assignments)
+  - [ ] Google Voice integration (communications)
+  - [ ] Gmail integration (notifications)
 - [🔄] Business Operations
   - [🔄] Current RMS integration architecture (customer data, inventory tracking)
   - [ ] Current RMS adapter implementation
@@ -85,12 +102,6 @@ The Front of House Productions (FOHP) web application has moved from the foundat
   - [ ] Rental management UI with Current RMS integration
   - [ ] QuickBooks/Xero integration (invoices)
   - [ ] HR system integration (low priority)
-- [ ] Google Workspace Suite
-  - [ ] Google Tasks integration (work assignments)
-  - [ ] Google Calendar integration
-  - [ ] Google Voice integration
-  - [ ] Google Drive integration
-  - [ ] Gmail integration
 - [ ] Document Management
   - [ ] DocuSign/Adobe integration (document viewing/signing)
 - [ ] Social Media Management

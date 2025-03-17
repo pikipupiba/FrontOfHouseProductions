@@ -59,6 +59,13 @@
 - **API**: RESTful + GraphQL via Supabase
 - **Serverless Functions**: Next.js API Routes / Edge Functions
 
+### Image Optimization & Configuration
+- **Image Domains**: Configured in Next.js to allow:
+  - `example.com` - Default example domain
+  - `lh3.googleusercontent.com` - For Google profile pictures
+- **Image Optimization**: Using Next.js built-in image optimization
+- **Image Component**: Using next/image for automatic optimization
+
 ### Integration Architecture
 - **Pattern**: Adapter pattern with consistent interfaces for all external services - ✅ IMPLEMENTED
 - **Caching**: Supabase tables as cache layer with background sync jobs - ✅ SCHEMA CREATED

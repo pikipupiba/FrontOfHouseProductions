@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Basic image optimization
   images: {
-    domains: ['example.com'],
+    domains: ['example.com', 'lh3.googleusercontent.com'],
   },
   // Essential for development
   reactStrictMode: true,
