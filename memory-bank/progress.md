@@ -30,10 +30,11 @@ The Front of House Productions (FOHP) web application has moved from the initial
 
 ## What's In Progress
 
-- 🔄 Development of landing page components
 - 🔄 Integration of secure user profile management
 - 🔄 Enhancing UI/UX with consistent design patterns
 - 🔄 Adding content for all main sections of the website
+- 🔄 Implementing additional UI libraries and components
+- 🔄 Setting up expanded tech stack with new libraries
 
 ## What's Left to Build
 
@@ -48,17 +49,19 @@ The Front of House Productions (FOHP) web application has moved from the initial
 - [✅] Vercel deployment configuration
 
 ### Landing Page
-- [ ] Hero section
-- [ ] Mission statement
-- [ ] Previous work showcase
-- [ ] Equipment showcase
-- [ ] Website functions showcase
-- [ ] Customer reviews section
+- [✅] Hero section
+- [✅] Mission statement
+- [✅] Previous work showcase
+- [✅] Equipment showcase
+- [✅] Website functions showcase
+- [✅] Customer reviews section
+- [✅] CTA (Call to Action) section
 - [✅] Contact information (via Contact page)
 
 ### Customer Portal
-- [ ] User registration and login
-- [ ] Profile management
+- [✅] User registration and login
+- [✅] Profile management
+- [✅] Portal switching mechanism (Customer/Employee/Admin)
 - [ ] Rental management (view, edit, schedule)
 - [ ] Document submission system
 - [ ] Contract signing mechanism
@@ -69,7 +72,8 @@ The Front of House Productions (FOHP) web application has moved from the initial
 - [ ] Customer tools
 
 ### Employee Portal
-- [ ] Employee authentication and authorization
+- [✅] Employee authentication and authorization
+- [✅] Basic employee dashboard
 - [ ] Google Workspace integration
 - [ ] Inventory management system integration
 - [ ] RFID tracking implementation
@@ -89,6 +93,7 @@ The Front of House Productions (FOHP) web application has moved from the initial
   - [ ] Reimbursement request system
 
 ### Management Features
+- [✅] Management dashboard interface
 - [ ] Job assignment management
 - [ ] Task creation and assignment
 - [ ] Purchase request approval system
@@ -106,7 +111,9 @@ The Front of House Productions (FOHP) web application has moved from the initial
 
 As the project has moved to the foundation phase and begun implementing core pages, we've identified and addressed several implementation issues:
 
-1. **Module System Compatibility**: Next.js 15+ with files using .mjs extension must use ES Module syntax (export default) rather than CommonJS (module.exports). We encountered and resolved this issue with the PostCSS configuration.
+1. **Vercel Environment Variable Truncation**: Fixed an "Invalid API key" error in the Vercel deployment (while local login worked fine) by correcting a truncated Supabase API key in the Vercel dashboard. The JWT tokens used as API keys are quite long and can get truncated when copying to environment variable fields.
+
+2. **Module System Compatibility**: Next.js 15+ with files using .mjs extension must use ES Module syntax (export default) rather than CommonJS (module.exports). We encountered and resolved this issue with the PostCSS configuration.
 
 2. **Integration Complexity**: The integration with existing inventory management systems and Google Workspace will require careful planning and implementation.
 
@@ -134,6 +141,9 @@ As the project has moved to the foundation phase and begun implementing core pag
 
 1. ✅ **Project Setup Complete**: Repository initialized, base Next.js application running, Supabase connected
 2. ✅ **Authentication System**: User registration, login, and role-based access control implemented
-3. **Landing Page Launched**: Public-facing components of the site functional
-4. **Basic Customer Portal**: Core rental management features operational
-5. **Basic Employee Portal**: Event information and task management operational
+3. ✅ **Landing Page Launched**: Public-facing components of the site functional
+4. ✅ **Complete User Authentication Flow**: Profile management and portal switching mechanism
+5. **Expanded Tech Stack Implementation**: Adding UI component libraries and visualization tools
+6. **Basic Customer Portal**: Core rental management features operational with file upload and timeline visualization
+7. **Basic Employee Portal**: Event information and task management operational
+8. **Management Dashboard**: Approval workflows and reporting operational

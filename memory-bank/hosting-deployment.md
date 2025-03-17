@@ -98,6 +98,12 @@ The following environment variables are required:
 
 These have been configured in both local development and in the Vercel dashboard.
 
+### Environment Variable Considerations
+
+- **Length Limitations**: Be careful with long environment variables in the Vercel dashboard. Supabase API keys (which are JWT tokens) can be quite long and may get truncated if not carefully copied. A truncated API key will cause "Invalid API key" errors in production while working fine locally.
+- **Secret Scanning**: Some CI/CD systems may flag JWT tokens as potential secrets. This is expected behavior.
+- **Access Scope**: Ensure environment variables are set for the correct environment scopes (Production, Preview, Development).
+
 ## Monitoring & Analytics
 
 - Vercel Analytics for performance monitoring

@@ -2,6 +2,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SignOutButton from './SignOutButton'
 import DashboardCard from './DashboardCard'
+import PortalSelector from './PortalSelector'
 
 export default async function Dashboard() {
   const supabase = await createServerClient()
@@ -15,7 +16,58 @@ export default async function Dashboard() {
   }
   
   // Get user details
-  const { data: user } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Get profile details
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user?.id)
+    .single()
+    
+  // Get user role from the user_roles table
+  const { data: userRole } = await supabase
+    .from('user_roles')
+    .select('*')
+    .eq('user_id', user?.id)
+    .single()
+  
+  // If profile doesn't exist yet, create one
+  if (!profile) {
+    await supabase.from('profiles').insert({
+      id: user?.id,
+      email: user?.email,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+  }
+  
+  // If user_role doesn't exist, create one with default customer role
+  if (!userRole) {
+    await supabase.from('user_roles').insert({
+      user_id: user?.id,
+      role: 'customer',
+      is_approved: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+  }
+  
+  // Determine available roles based on user_roles table
+  const currentRole = userRole?.role || 'customer'
+  const isRoleApproved = userRole?.is_approved !== false
+  const availableRoles = ['customer']
+  
+  // Only show roles that are approved
+  if (isRoleApproved) {
+    if (currentRole === 'employee' || currentRole === 'manager') {
+      availableRoles.push('employee')
+    }
+    
+    if (currentRole === 'manager') {
+      availableRoles.push('manager')
+    }
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -26,14 +78,35 @@ export default async function Dashboard() {
           </div>
           
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Welcome, {user.user?.email}!</h2>
+            <h2 className="text-xl font-semibold mb-4">Welcome, {profile?.full_name || user?.email}!</h2>
             <p className="text-gray-600">
               You are now logged into the Front of House Productions portal. 
               From here, you can manage your rentals, view your events, and more.
             </p>
+            {!isRoleApproved && userRole && userRole.role !== 'customer' && (
+              <div className="mt-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-md">
+                Your {userRole.role} role is pending approval. Some features may be limited until approval.
+              </div>
+            )}
           </div>
           
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Portal selector component */}
+          {availableRoles.length > 1 && (
+            <PortalSelector 
+              availableRoles={availableRoles} 
+              currentRole={currentRole}
+            />
+          )}
+          
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Profile card - implemented */}
+            <DashboardCard 
+              title="My Profile" 
+              description="View and update your account information"
+              link="/dashboard/profile"
+              icon="👤"
+            />
+            
             {/* These will be implemented later */}
             <DashboardCard 
               title="My Rentals" 
