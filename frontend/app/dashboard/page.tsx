@@ -1,6 +1,7 @@
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import SignOutButton from './SignOutButton'
+import DashboardCard from './DashboardCard'
 
 export default async function Dashboard() {
   const supabase = await createServerClient()
@@ -16,7 +17,6 @@ export default async function Dashboard() {
   // Get user details
   const { data: user } = await supabase.auth.getUser()
   
-  // Sign out function will be called from a client component
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -60,59 +60,6 @@ export default async function Dashboard() {
           <div className="mt-8">
             <SignOutButton />
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Client component for sign out functionality
-'use client'
-
-import { useRouter } from 'next/navigation'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
-
-function SignOutButton() {
-  const router = useRouter()
-  
-  const handleSignOut = async () => {
-    const supabase = createBrowserClient()
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
-  }
-  
-  return (
-    <button
-      onClick={handleSignOut}
-      className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-    >
-      Sign Out
-    </button>
-  )
-}
-
-// Simple dashboard card component
-function DashboardCard({ title, description, link, icon }: { 
-  title: string;
-  description: string;
-  link: string;
-  icon: string;
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg bg-white shadow">
-      <div className="p-5">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 text-3xl">{icon}</div>
-          <div className="ml-5">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">{title}</h3>
-            <p className="mt-1 text-sm text-gray-500">{description}</p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <Link href={link} className="text-sm font-medium text-blue-600 hover:text-blue-500">
-            View details <span aria-hidden="true">&rarr;</span>
-          </Link>
         </div>
       </div>
     </div>
