@@ -51,3 +51,14 @@ DO NOT read or modify:
 - This applies to configuration files like postcss.config.mjs, tailwind.config.mjs, etc.
 - Files with `.js` extension can continue to use CommonJS syntax
 - Mixing module systems incorrectly leads to "module is not defined in ES module scope" errors
+
+### Windows/PowerShell Environment
+
+- Always track current working directory when executing commands
+- Do not prepend `cd frontend &&` when already in the frontend directory
+- PowerShell in Windows does not support creating multiple files/directories by separating arguments with spaces (unlike bash)
+- Use PowerShell-specific syntax for file/directory operations:
+  - Creating directories: `New-Item -ItemType Directory -Path "path\to\dir"` or `mkdir "path\to\dir"`
+  - Creating multiple directories: `mkdir "dir1","dir2","dir3"` (comma-separated)
+  - Creating files: `New-Item -ItemType File -Path "path\to\file"` or `ni "path\to\file"`
+  - Creating paths with multiple directories: `mkdir -p "path\to\nested\dir"` will fail; use `New-Item -ItemType Directory -Path "path\to\nested\dir" -Force` instead

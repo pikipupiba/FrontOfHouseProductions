@@ -59,6 +59,20 @@
 - **API**: RESTful + GraphQL via Supabase
 - **Serverless Functions**: Next.js API Routes / Edge Functions
 
+### Integration Architecture
+- **Pattern**: Adapter pattern with consistent interfaces for all external services - ✅ IMPLEMENTED
+- **Caching**: Supabase tables as cache layer with background sync jobs - ✅ SCHEMA CREATED
+- **Authentication**: Secure credential management with token refresh support - ✅ IMPLEMENTED
+- **Data Sync**: Combination of webhooks and scheduled jobs with retry logic - ✅ IMPLEMENTED
+- **Error Handling**: Categorized error types with appropriate retry strategies - ✅ IMPLEMENTED
+- **Core Components**: ✅ IMPLEMENTED
+  - Integration Manager: Central service for coordinating all integrations
+  - BaseAdapter: Abstract class defining the integration interface
+  - SyncJob: Background job processor for data synchronization
+  - RetryStrategy: Exponential backoff with jitter for resilient operations
+  - CredentialsManager: Secure handling of API credentials
+  - WebhookHandler: Processes real-time updates from external services
+
 ### Infrastructure
 - **Hosting**: Vercel
 - **Version Control**: GitHub
@@ -74,6 +88,7 @@
 - Git
 - Supabase CLI
 - Vercel CLI (optional)
+- Windows 11 with PowerShell (current development environment)
 
 ### Local Development
 ```bash
@@ -90,12 +105,44 @@ cp .env.example .env.local
 npm run dev
 ```
 
+### Windows-Specific Considerations
+- **Working Directory Awareness**: Always be aware of the current working directory when executing commands. In PowerShell, use `Get-Location` or `pwd` to check the current directory.
+- **Command Structure**: Avoid unnecessary directory changes (e.g., `cd frontend && npm test` when already in frontend directory)
+- **File/Directory Operations**: Use PowerShell syntax for file operations:
+  ```powershell
+  # Creating directories
+  New-Item -ItemType Directory -Path "path\to\dir"
+  # or
+  mkdir "path\to\dir"
+  
+  # Creating multiple directories (comma-separated, not space-separated)
+  mkdir "dir1","dir2","dir3"
+  
+  # Creating files
+  New-Item -ItemType File -Path "path\to\file"
+  # or
+  ni "path\to\file"
+  
+  # Creating nested directories (equivalent to mkdir -p in bash)
+  New-Item -ItemType Directory -Path "path\to\nested\dir" -Force
+  ```
+- **Path Separators**: Windows uses backslashes (`\`) in paths, though forward slashes (`/`) often work in modern PowerShell
+- **Command Differences**: Be aware of different command equivalents between bash and PowerShell
+
 ### Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (server-side only)
 - `GOOGLE_API_KEY`: Google API key for Maps integration
-- Various API keys for third-party services
+- `CURRENT_RMS_API_KEY`: API key for Current RMS integration
+- `CURRENT_RMS_SUBDOMAIN`: Subdomain for Current RMS account
+- `DOCUSIGN_CLIENT_ID`: Client ID for DocuSign OAuth
+- `DOCUSIGN_CLIENT_SECRET`: Client secret for DocuSign OAuth
+- `DOCUSIGN_REDIRECT_URI`: Redirect URI for DocuSign OAuth flow
+- `GOOGLE_OAUTH_CLIENT_ID`: Client ID for Google Workspace OAuth
+- `GOOGLE_OAUTH_CLIENT_SECRET`: Client secret for Google OAuth
+- `GOOGLE_OAUTH_REDIRECT_URI`: Redirect URI for Google OAuth flow
+- Additional API keys for other third-party services
 
 ## Technical Constraints
 
@@ -125,6 +172,13 @@ npm run dev
   - Tablet: 641px-1024px
   - Desktop: 1025px+
 
+### Integration Constraints
+- Rate Limiting: All external API calls must respect rate limits
+- Caching Requirements: Critical data must be cached to reduce API calls
+- API Credential Security: No credentials stored in client-side code
+- Background Jobs: Sync jobs must be resilient to failures
+- Offline Capability: Core features should work with stale cached data
+
 ## Dependencies
 
 ### Core Dependencies
@@ -143,6 +197,21 @@ npm run dev
 - tailwind-merge
 - clsx
 - lucide-react
+
+### Integration Dependencies
+- axios (for consistent API requests)
+- current-rms-api (for Current RMS integration)
+- node-quickbooks (for QuickBooks integration)
+- googleapis (for Google Workspace integrations)
+- docusign-esign (for DocuSign integration)
+- @supabase/storage-js (for file storage)
+- oauth4webapi (for standardized OAuth handling)
+- jsonwebtoken (for token management)
+- node-cache (for in-memory caching)
+- p-retry (for intelligent retry logic)
+- p-queue (for rate limiting and job queuing)
+- node-cron (for scheduled jobs)
+- webhook-validator (for webhook signature validation)
 
 ### UI & Visualization Dependencies
 - @radix-ui/* components
@@ -166,13 +235,69 @@ npm run dev
 - postcss
 - autoprefixer
 - @playwright/test
+- msw (for API mocking in tests)
+- supertest (for API testing)
+- mockdate (for date-based testing)
 
-### External Services
-- Supabase (Database, Auth, Storage)
-- Google Maps API
-- Google Workspace API
-- Web Push API for notifications
-- Vercel for hosting and deployment
+### External Services & Integrations
+
+#### Core Services
+- **Supabase**: Database, Auth, Storage
+- **Vercel**: Hosting and deployment
+
+#### Business Operations
+- **Current RMS**: Customer data and inventory tracking
+  - SDK: current-rms-api
+  - Authentication: API key-based
+  - Caching Strategy: Daily incremental sync, weekly full sync
+  - Implementation Priority: High (first integration)
+- **QuickBooks/Xero**: Invoice management
+  - SDK: node-quickbooks or xero-node
+  - Authentication: OAuth 2.0
+  - Caching Strategy: Daily sync for invoices, real-time for payment status
+  - Implementation Priority: Medium (after rental management)
+
+#### Google Workspace Ecosystem
+- **Google Tasks API**: Work assignments
+  - Caching Strategy: Hourly sync with webhook updates
+  - Implementation Priority: Medium (for employee portal)
+- **Google Calendar API**: Event scheduling
+  - Caching Strategy: Hourly sync for upcoming events
+  - Implementation Priority: Medium (for event timelines)
+- **Google Voice API**: Communication
+  - Caching Strategy: Minimal caching, real-time preferred
+  - Implementation Priority: Low
+- **Google Drive API**: Document storage
+  - Caching Strategy: Metadata cache, content fetched on demand
+  - Implementation Priority: Medium (for document management)
+- **Gmail API**: Email communications
+  - Caching Strategy: Minimal caching for templates
+  - Implementation Priority: Low
+- **Google Maps API**: Location services with @react-google-maps/api
+  - Caching Strategy: Geocoding cached indefinitely, routes for 24 hours
+  - Implementation Priority: Medium (for event locations)
+
+#### Document Management
+- **DocuSign/Adobe**: Document signing
+  - SDK: docusign-esign or adobe-sign-sdk
+  - Authentication: OAuth 2.0
+  - Caching Strategy: Template caching, status sync every 15 minutes
+  - Implementation Priority: High (for contract management)
+
+#### Social Media
+- **Facebook & Instagram**: Meta Graph API
+- **X/Twitter**: Twitter API v2
+- **Snapchat**: Snap Marketing API
+- **TikTok**: TikTok API for Business
+- **Reddit**: Reddit API
+- **YouTube**: YouTube Data API
+- **Discord**: Discord Bot API
+- **Yelp**: Yelp Fusion API
+- **Google Business**: Google My Business API
+- Implementation Priority: Low (later phase)
+
+#### Other
+- **Web Push API**: Browser notifications
 
 ## Build & Deployment
 
@@ -197,6 +322,17 @@ npm start
 - Component Testing: Storybook (optional)
 - Integration Tests: Playwright
 - Performance Testing: Lighthouse CI
+- API Mock Testing: MSW for simulating external services
+
+## Integration Testing
+
+- **Mock Servers**: MSW to simulate external API responses
+- **Fixture Data**: Static fixture data for predictable testing
+- **Environment Separation**: Dedicated testing environments for integrations
+- **API Recording**: Record actual API responses for mock refinement
+- **Webhooks Testing**: Simulated webhook events for testing handlers
+- **Rate Limit Testing**: Tests for proper handling of rate limit responses
+- **Credential Rotation**: Tests for token refresh and expiration handling
 
 ## Library Selection Strategy
 
@@ -209,3 +345,16 @@ Our approach to selecting libraries follows these principles:
 5. **TypeScript Support**: All libraries must have good TypeScript definitions
 
 This strategy ensures we build a robust application while maintaining performance and developer experience. The selected libraries provide a comprehensive foundation for all planned features while keeping the codebase maintainable and sustainable for the long term.
+
+## Integration Implementation Approach
+
+Our approach to implementing integrations follows these principles:
+
+1. **Standardized Architecture**: All integrations follow the same adapter pattern
+2. **Cache-First Strategy**: Prioritize cached data for performance with async updates
+3. **Graceful Degradation**: Services should degrade gracefully when external APIs fail
+4. **Comprehensive Logging**: Detailed logging of all integration operations
+5. **Security-First**: Secure handling of all API credentials
+6. **Progressive Enhancement**: Core functionality without integrations, enhanced with them
+
+This implementation approach ensures consistent, reliable, and maintainable integrations across all external services while protecting the application from external dependencies.
