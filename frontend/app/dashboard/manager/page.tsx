@@ -199,10 +199,24 @@ export default async function ManagerPortal() {
             />
             
             <DashboardCard 
-              title="Google Workspace" 
-              description="Access company calendar and documents"
-              link="#"
-              icon="🔄"
+              title="Google Calendar" 
+              description="View and manage team calendar events"
+              link="/dashboard/manager/google-calendar"
+              icon="📅"
+            />
+            
+            <DashboardCard 
+              title="Google Drive" 
+              description="Access company documents and files"
+              link="/dashboard/manager/google-drive"
+              icon="📁"
+            />
+            
+            <DashboardCard 
+              title="Google Tasks" 
+              description="Manage team tasks and to-dos"
+              link="/dashboard/manager/google-tasks"
+              icon="✓"
             />
             
             <DashboardCard 

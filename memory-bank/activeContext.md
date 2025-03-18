@@ -8,10 +8,59 @@ The Front of House Productions (FOHP) web application project has successfully c
 2. Implementing Google Authentication for customers and employees
 3. Preparing to develop the customer portal core features
 4. Refining the UI/UX with consistent design elements across pages
-5. Planning for employee portal implementation
+5. Implementing employee portal features, including Google Workspace integration
 6. Addressing technical improvements like ESLint issues
+7. Simplifying and consolidating database migrations for improved maintainability
 
 ## Recent Changes
+
+- Consolidated Supabase Migrations:
+  - Simplified 13 incremental migrations into 6 logical, well-organized files
+  - Addressed issues with Google authentication functions
+  - Standardized parameter naming across all database functions
+  - Added comprehensive error handling for critical functions
+  - Improved security with explicit SECURITY DEFINER contexts
+  - Added performance-optimizing indexes
+  - Created clear section headers and documentation
+  - Fixed email validation with robust NULL handling
+  - Organized migrations by logical components with clear dependency order
+  - Created comprehensive documentation in supabase-migration-simplification.md
+  - Implemented the consolidated migrations in a new test database
+  - Documented the process for connecting the application to the new database
+
+- Simplified Google Workspace Integration:
+  - Scaled back integration to focus only on Google Drive functionality
+  - Created placeholder UI components for Calendar and Tasks with "Coming Soon" badges
+  - Modified API routes for Calendar and Tasks to return 503 Service Unavailable
+  - Updated GoogleWorkspaceAdapter to handle only Drive operations
+  - Maintained authentication flow for Google OAuth (required for Drive)
+  - Preserved UI layout with informative placeholders for future implementation
+  - Added comprehensive documentation in google-workspace-simplification.md
+  - Fixed authentication-related security issues in API routes
+  - Implemented proper error handling for unavailable services
+
+- Fixed Authentication Issues:
+  - Implemented SQL function fixes for Google authentication
+  - Created new migration script to resolve profile creation errors
+  - Fixed ambiguous column references in SQL functions
+  - Enhanced email validation with fallbacks for null values
+  - Added emergency profile creation functions
+  - Improved error handling in authentication flow
+  - Enhanced Next.js API route security patterns
+  - Updated documentation for authentication troubleshooting
+
+- Implemented Google Workspace Integration:
+  - Created GoogleWorkspaceAdapter implementing the baseadapter interface
+  - Implemented Drive service with full functionality
+  - Disabled Calendar and Tasks services for reliability improvement
+  - Built OAuth authentication flow with secure token storage
+  - Created UI components for Drive files and placeholder components for calendar and tasks
+  - Added API routes for all Google Workspace services (with appropriate status codes for unavailable services)
+  - Implemented secure credential management with Supabase
+  - Created database migration for Google Workspace cache tables
+  - Updated employee dashboard with Google Workspace access
+  - Added comprehensive documentation for the integration
+  - Implemented connection status and management in the UI
 
 - Implemented Google Authentication:
   - Added Google sign-in/sign-up buttons to login and signup pages
@@ -58,20 +107,26 @@ The Front of House Productions (FOHP) web application project has successfully c
 
 ### Immediate Priorities
 
-1. **Google Authentication Configuration**:
-   - Configure Google OAuth in Google Cloud Console
-   - Set up Supabase to work with Google authentication
-   - Apply the fixed database migration for Google user profile handling
-   - Configure redirect URLs in Supabase dashboard (not via migration)
-   - Test the authentication flow thoroughly
+1. **Database Migration Implementation**:
+   - Connect the application to the new consolidated database
+   - Update environment variables with new Supabase project details
+   - Verify all database functionality works with the consolidated schema
+   - Migrate essential data from the original database if needed
+   - Monitor for any database-related issues after switching
 
-2. **Google Workspace Integration**: 
-   - Implement Google Workspace services adapter
-   - Create Google Calendar integration for event timelines
-   - Set up Google Drive integration for document storage
-   - Implement Google Tasks integration for work assignments
+2. **Google Authentication Stability**:
+   - Complete testing of authentication flow with SQL function fixes
+   - Monitor for any additional profile creation issues
+   - Ensure robust error handling for authentication edge cases
+   - Implement additional logging if needed for troubleshooting
 
-3. **Customer Portal Development**: 🔄 IN PROGRESS
+3. **Google Workspace Integration Simplification**: 
+   - Complete verification of Drive functionality after simplification
+   - Update user documentation to reflect the temporary unavailability of Calendar and Tasks
+   - Plan timeline for re-enabling Calendar and Tasks when ready
+   - Ensure proper handling of authentication despite limited service scope
+
+4. **Customer Portal Development**: 🔄 IN PROGRESS
    - Implement customer portal interface ✅ 
    - Implement rental management features with Current RMS integration 🔄
    - Create document submission system
@@ -79,14 +134,16 @@ The Front of House Productions (FOHP) web application project has successfully c
    - Develop customer data storage
    - Create event timeline tools
 
-4. **Employee Portal Development**: 🔄 STARTED
+5. **Employee Portal Development**: 🔄 IN PROGRESS
    - Implement employee dashboard interface ✅
+   - Implement Google Workspace Drive integration ✅
+   - Plan for re-enabling Calendar and Tasks integration
    - Build event information display
    - Create task management system
    - Develop employee toolbox features
    - Implement time tracking functionality
 
-5. **Management Portal Development**: 🔄 STARTED
+6. **Management Portal Development**: 🔄 STARTED
    - Implement management dashboard interface ✅
    - Build staff management features
    - Implement approval workflows
@@ -94,12 +151,21 @@ The Front of House Productions (FOHP) web application project has successfully c
 
 ## Active Decisions & Considerations
 
+### Database Strategy
+
+- **Migration Consolidation**: Using logical grouping of DB migrations instead of incremental patches
+- **Error Handling**: Comprehensive error handling in all database functions
+- **Security Context**: Explicit SECURITY DEFINER functions with search_path set for all role-based operations
+- **Performance Optimization**: Strategic indexes on frequently queried columns
+- **Deployment Strategy**: Use test database first before updating production connection
+
 ### Authentication Strategy
 
 - **Multi-Provider Authentication**: Using Supabase Auth with both email/password and Google OAuth
 - **Google Authentication Flow**: Users can sign up and log in using their Google accounts
 - **Profile Data Synchronization**: Syncing Google profile data (avatar, name) with our profiles table
 - **Role-Based Access Control**: Maintaining role-based access for Google-authenticated users
+- **Authentication Error Handling**: Implementing comprehensive error handling with fallback mechanisms
 
 ### Architecture Decisions
 
@@ -115,18 +181,32 @@ The Front of House Productions (FOHP) web application project has successfully c
 - **Caching Strategy**: Implementing Supabase tables as a cache layer for external data with background synchronization
 - **API Security**: Routing all external API calls through our backend to protect credentials and implement rate limiting
 - **Implementation Priority**: 
-  1. Google Workspace (calendar, drive, tasks)
+  1. Google Workspace (Drive only, with Calendar and Tasks as placeholders) ✅ SIMPLIFIED
   2. Document management
   3. Current RMS (rental management)
   4. Financial systems
   5. Social media
 
+### Google Workspace Integration
+
+- **Connection Management**: Users connect their Google accounts via OAuth flow
+- **Simplified Scope**: Currently only Drive integration is fully functional
+- **Feature Placeholders**: Calendar and Tasks interfaces show "Coming Soon" placeholders
+- **Credential Storage**: OAuth tokens stored securely in Supabase with RLS policies
+- **API Access**: All API access is routed through Next.js API routes for security
+- **Resource Caching**: Drive files are cached in Supabase tables
+- **UI Integration**: Seamless UI integration in the employee portal with clear service status indication
+- **Component Architecture**: React components for each Google Workspace service
+- **Migration Strategy**: Database migration for cache tables with proper indexing
+- **Error Handling**: Comprehensive error handling with appropriate status codes
+- **Documentation**: Detailed documentation for the simplified integration approach and future re-enablement
+
 ### Open Questions
 
+- Timeline for re-enabling Calendar and Tasks integrations
 - Specific API credential management approach for production environment
 - Webhook configuration for real-time updates from external services
 - Authentication and data flow approach for multiple third-party integrations:
-  - Google Workspace suite (Tasks, Calendar, Voice, Drive, Gmail) - In planning
   - Current RMS (customer data, inventory tracking) - In planning
   - QuickBooks/Xero (invoices)
   - Document signing services (DocuSign/Adobe)
@@ -161,13 +241,26 @@ The development is following a phased approach:
    - Portal switching mechanism between different user types
    - Basic interfaces for all portal types (customer, employee, manager)
 
-3. **Authentication Enhancement Phase**: 🔄 IN PROGRESS
-   - Google Authentication implementation ✅ COMPLETED
-   - Profile data synchronization with Google
-   - OAuth flow implementation and testing
-   - Role-based access integration with third-party authentication
+3. **Authentication Enhancement Phase**: ✅ COMPLETED
+   - Google Authentication implementation ✅ 
+   - Profile data synchronization with Google ✅
+   - OAuth flow implementation and testing ✅
+   - Role-based access integration with third-party authentication ✅
 
-4. **Customer Portal Phase**: 🔄 IN PROGRESS
+4. **Integration Infrastructure Phase**: ✅ COMPLETED
+   - Core integration manager service ✅
+   - Implementing adapter pattern for all external services ✅
+   - Building cache synchronization system ✅
+   - Setting up secure credential management ✅
+
+5. **External Service Integration Phase**: 🔄 IN PROGRESS
+   - Google Workspace Drive integration ✅ COMPLETED
+   - Google Workspace Calendar and Tasks (temporarily simplified to placeholders) ⚠️ SIMPLIFIED
+   - Document management
+   - Current RMS integration
+   - Financial systems integration
+
+6. **Customer Portal Phase**: 🔄 IN PROGRESS
    - Equipment catalog, rental workflow, document management
    - This is our current focus, building on the portal framework to implement specific customer features
    - Next tasks:
@@ -177,28 +270,23 @@ The development is following a phased approach:
      - Implement file upload for documents using react-dropzone and Supabase Storage
      - Build event timeline visualization with react-calendar-timeline
 
-5. **Employee Portal Phase**: 🔄 STARTED
+7. **Employee Portal Phase**: 🔄 IN PROGRESS
    - Event information, task management, basic tools
-   - Initial interface created, now implementing specific functionality
+   - Initial interface created, Google Workspace Drive integration implemented ✅
+   - Calendar and Tasks integration simplified to placeholders ⚠️
+   - Now implementing more specific functionality
    - Will use real-time features from Supabase for task updates
    - Will implement equipment tracking with RFID interfaces
 
-6. **Management Portal Phase**: 🔄 STARTED
+8. **Management Portal Phase**: 🔄 STARTED
    - Staff management, approval workflows, reporting
    - Initial interface created, now implementing specific functionality
    - Will use recharts for data visualization and reporting
    - Will implement approval workflows with notifications
 
-7. **Integration Infrastructure Phase**: ✅ COMPLETED
-   - Core integration manager service
-   - Implementing adapter pattern for all external services
-   - Building cache synchronization system
-   - Setting up secure credential management
-
-8. **Advanced Features Phase**: 📅 PLANNED
+9. **Advanced Features Phase**: 📅 PLANNED
    - Additional integrations, advanced tools, reporting
    - Final phase focusing on integration with external systems and advanced functionality
-   - Will include Google Workspace integration
    - Will implement push notifications for real-time alerts
 
 ## Memory Bank Maintenance

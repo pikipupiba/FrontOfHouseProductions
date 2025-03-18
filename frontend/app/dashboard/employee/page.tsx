@@ -161,6 +161,27 @@ export default async function EmployeePortal() {
           <h2 className="text-xl font-semibold mb-4">Tools & Resources</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
             <DashboardCard 
+              title="Google Calendar" 
+              description="View and manage your calendar events"
+              link="/dashboard/employee/google-calendar"
+              icon="📅"
+            />
+            
+            <DashboardCard 
+              title="Google Drive" 
+              description="Access your documents and files"
+              link="/dashboard/employee/google-drive"
+              icon="📁"
+            />
+            
+            <DashboardCard 
+              title="Google Tasks" 
+              description="Manage your tasks and to-dos"
+              link="/dashboard/employee/google-tasks"
+              icon="✓"
+            />
+            
+            <DashboardCard 
               title="Task Management" 
               description="View, update, and complete assigned tasks"
               link="#"
