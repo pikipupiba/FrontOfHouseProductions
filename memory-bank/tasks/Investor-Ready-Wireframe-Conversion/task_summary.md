@@ -49,39 +49,41 @@ The current FOHP application is a sophisticated web platform with:
 
 The wireframe version will feature:
 
-- **Authentication**: Mock authentication system using localStorage/cookies
-- **Database**: Static JSON files for all data needs
+- **Authentication**: Direct mock authentication system using localStorage/cookies (no real auth)
+- **Database**: Static TypeScript files for all data needs (no Supabase dependency)
 - **Storage**: Static asset references instead of dynamic storage
-- **Integrations**: Visual representation with static mock data
-- **Portal System**: Preserved but operating on mock data
-- **UI/UX**: Unchanged, operating on mock data
+- **Integrations**: Visual-only representation with static mock data
+- **Portal System**: Preserved with mock data only
+- **UI/UX**: Unchanged visually, but using mock data exclusively
 
 ## Conversion Process
 
 ### Phase 1: Setup Mock Environment
-- Create mock data structures to replace database content
-- Implement simple authentication system
-- Set up environment for static data
+- Create mock data structures to completely replace database content
+- Implement standalone authentication system
+- Establish wireframe-only architecture (no dual-mode support)
 
 ### Phase 2: Authentication Replacement
-- Replace Supabase authentication with mock system
+- Remove Supabase authentication entirely
+- Implement localStorage-based auth system
 - Maintain login/signup UI with simplified backend
-- Implement role-based access with mock data
+- Implement client-side role-based access
 
 ### Phase 3: Database Replacement
-- Replace all Supabase database calls with static JSON
-- Update API routes to serve mock data
-- Remove database migration files
+- Remove all Supabase dependencies and code
+- Replace all database calls with mock TypeScript data
+- Update API routes to only serve mock data
+- Eliminate database migration files
 
 ### Phase 4: Integration Simplification
-- Replace Google Workspace integration with static mock UI
+- Remove real Google Workspace integration code
+- Implement visual-only mock components
 - Create believable static representations of integration features
-- Maintain visual integration components
 
 ### Phase 5: Deployment Optimization
 - Optimize for Vercel deployment
-- Remove unnecessary dependencies
-- Ensure environment variables work without real services
+- Remove all real service dependencies
+- Simplify build and deployment process
 
 ## Major Challenges
 
@@ -93,40 +95,46 @@ The wireframe version will feature:
 
 ## Approach Details
 
-1. **Mock Authentication Implementation**:
-   - Create a simple auth context using React Context API and localStorage
+1. **Direct Mock Authentication Implementation**:
+   - Create an auth context using React Context API and localStorage exclusively
    - Define hardcoded user profiles for different roles
-   - Implement sign-in/sign-up flows that visually match the original
+   - Implement sign-in/sign-up flows that visually match the original but without real auth
+   - Remove all Supabase Auth code and dependencies
 
-2. **Mock Data Strategy**:
-   - Create JSON files for all entity types (users, equipment, rentals, etc.)
-   - Implement helper functions to simulate CRUD operations
+2. **Direct Mock Data Strategy**:
+   - Create TypeScript files with static data for all entity types
+   - Build in-memory data manipulation layer with CRUD operations
    - Ensure realistic relationships between mock data entities
+   - Remove all database connection code
 
-3. **API Simplification**:
-   - Modify all API routes to return static mock data
-   - Remove Supabase client initialization
-   - Simplify error handling for the wireframe version
+3. **Complete API Replacement**:
+   - Replace all API routes with mock-only implementations
+   - Remove Supabase client initialization and imports
+   - Implement client-side filtering, pagination, and sorting
+   - Simulate realistic API behavior with delays and error handling
 
-4. **Integration Replacement**:
-   - Create static versions of Google Drive, Calendar, and Tasks components
-   - Replace real API calls with mock data functions
-   - Maintain visual consistency with the original integration components
+4. **Visual-Only Integration Implementation**:
+   - Create standalone mock versions of Google Drive, Calendar, and Tasks components
+   - Remove all real API service code and dependencies
+   - Maintain visual consistency with original integration components
+   - Simulate connection states and authentication flows
 
-5. **UI/UX Preservation**:
-   - Keep all UI components intact
-   - Ensure all interactive elements provide visual feedback
+5. **UI/UX Direct Implementation**:
+   - Keep all UI components visually intact
+   - Update component logic to work exclusively with mock data
+   - Remove conditional imports and environment checks
    - Maintain responsive design across device sizes
 
 ## Timeline
 
 1. **Phase 1**: 1-2 days - Setup mock environment
-2. **Phase 2**: 1-2 days - Authentication replacement
-3. **Phase 3**: 2-3 days - Database replacement
-4. **Phase 4**: 1-2 days - Integration simplification
-5. **Phase 5**: 1 day - Deployment optimization and testing
+2. **Phase 2**: 1-2 days - Complete authentication replacement
+3. **Phase 3**: 2-3 days - Complete database replacement
+4. **Phase 4**: 1-2 days - Integration visual implementation
+5. **Phase 5**: 1-2 days - Deployment optimization and testing
+6. **Phase 6**: 1 day - Cleanup of all real service code
 
-**Total Estimated Time**: 6-10 days
+**Total Estimated Time**: 7-12 days
 
 ## Resources Required
 

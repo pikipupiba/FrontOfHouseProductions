@@ -1,265 +1,276 @@
 # Relevant Patterns: Investor-Ready-Wireframe-Conversion
 
-This document outlines the key design patterns and implementation strategies we'll use for converting the Front of House Productions (FOHP) application to a wireframe version.
+This document outlines the key design patterns and software architecture patterns used in the wireframe implementation.
 
-## Mock Implementation Patterns
+## Core Design Patterns
 
-### 1. Mock Authentication Pattern
+### 1. Repository Pattern for Mock Data
 
-```mermaid
-flowchart TD
-    A[User Interface] --> B[Auth Context]
-    B --> C{localStorage}
-    B --> D[Mock Users Data]
-    C --> E[Mock Token]
-    D --> F[User Profiles by Role]
-    E --> G[Session Management]
-    G --> H[Role-Based Access Control]
-```
-
-**Implementation Strategy**:
-- Create a React Context Provider to manage authentication state
-- Store authentication state in localStorage or cookies
-- Include hardcoded user profiles for different roles (customer, employee, manager)
-- Implement a simple token-based mechanism to simulate real JWT
-- Maintain session expiration simulation for realism
-- Preserve login/signup UI flows with backend calls replaced by static data
-
-### 2. Static Data Repository Pattern
-
-```mermaid
-flowchart TD
-    A[Component] --> B[Data Hooks]
-    B --> C[Mock Data Service]
-    C --> D[Static JSON Files]
-    D --> E[Users]
-    D --> F[Equipment]
-    D --> G[Rentals]
-    D --> H[Events]
-    D --> I[Integration Data]
-    C --> J[CRUD Simulation]
-```
-
-**Implementation Strategy**:
-- Create a centralized mock data service
-- Organize static JSON files by entity type
-- Implement helper functions that mimic database operations:
-  - `getAll`: Return full collections
-  - `getById`: Filter collections by ID
-  - `getByFilter`: Apply filters to collections
-  - `create`: Simulate creation (in-memory only)
-  - `update`: Simulate updates (in-memory only)
-  - `delete`: Simulate deletion (in-memory only)
-- Maintain referential integrity between related mock data
-- Include realistic delay simulation for operations
-
-### 3. Mock API Adapter Pattern
-
-```mermaid
-flowchart TD
-    A[Component] --> B[API Hooks]
-    B --> C[API Routes]
-    C --> D[Mock API Adapter]
-    D --> E[Mock Data Service]
-    D --> F[Response Formatting]
-    D --> G[Error Simulation]
-```
-
-**Implementation Strategy**:
-- Maintain the same API route structure
-- Replace real API calls with mock data responses
-- Preserve response formats to maintain UI compatibility
-- Implement simulated latency for realism
-- Include error state simulation for testing error handling
-- Support filtering, pagination, and sorting in mock responses
-
-### 4. Integration Facade Pattern
-
-```mermaid
-flowchart TD
-    A[Integration UI] --> B[Integration Hooks]
-    B --> C[Integration Facade]
-    C --> D[Static Integration Data]
-    C --> E[Mock Credentials]
-    C --> F[Mock Connection Status]
-```
-
-**Implementation Strategy**:
-- Create facade classes that mimic the original integration adapters
-- Replace real API calls with mock data responses
-- Simulate connection status and authentication flows
-- Maintain the same interface as real integrations
-- Use static data for:
-  - Google Drive files and folders
-  - Calendar events
-  - Task lists and items
-- Preserve visual components while simplifying the backend
-
-### 5. Mock Storage Pattern
-
-```mermaid
-flowchart TD
-    A[UI Components] --> B[Storage Hooks]
-    B --> C[Mock Storage Service]
-    C --> D[Static File References]
-    C --> E[In-Memory Upload Simulation]
-    C --> F[Static URLs]
-```
-
-**Implementation Strategy**:
-- Replace Supabase Storage with static file references
-- Create a mock storage service with the same interface
-- Simulate file uploads and downloads (client-side only)
-- Use predefined static URLs for file references
-- Include sample files for different types (images, documents, etc.)
-
-### 6. State Preservation Pattern
-
-```mermaid
-flowchart TD
-    A[User Interaction] --> B[Component State]
-    B --> C[Local State Management]
-    C --> D[localStorage/sessionStorage]
-    D --> E[Mock Session Data]
-    D --> F[UI State Persistence]
-```
-
-**Implementation Strategy**:
-- Use localStorage/sessionStorage for state persistence
-- Implement client-side state management without server synchronization
-- Preserve user interactions within session lifespan
-- Reset to initial state on "logout" or session expiration
-- Maintain realistic interaction feedback
-
-## Application-Specific Implementation Patterns
-
-### 1. Role-Based Portal Simulation
-
-```mermaid
-flowchart TD
-    A[Login] --> B[Auth Context]
-    B --> C{Role Type}
-    C -->|Customer| D[Customer Portal]
-    C -->|Employee| E[Employee Portal]
-    C -->|Manager| F[Manager Portal]
-    D --> G[Customer Interface with Mock Data]
-    E --> H[Employee Interface with Mock Data]
-    F --> I[Management Interface with Mock Data]
-```
+The wireframe uses the Repository pattern to abstract data access logic and provide a consistent interface for retrieving mock data.
 
 **Implementation Details**:
-- Preserve the portal switching mechanism based on user role
-- Use role-specific mock data for each portal view
-- Maintain consistent navigation and access control based on role
-- Simulate permission checks without database RLS
+- Generic `MockDataService<T>` class that provides CRUD operations
+- Type-safe data access and manipulation
+- Consistent interface across all entity types
 
-### 2. Google Workspace Integration Simulation
+```typescript
+// Example Repository Pattern Implementation
+export class MockDataService<T extends Entity> {
+  private data: T[];
 
-```mermaid
-flowchart TD
-    A[Google Workspace UI] --> B[Mock Google Service]
-    B --> C[Static Drive Files]
-    B --> D[Static Calendar Events]
-    B --> E[Static Task Lists]
-    B --> F[Mock Connection Flow]
+  constructor(initialData: T[], entityName: string, delayMs = 300) {
+    this.data = [...initialData];
+    // ...
+  }
+
+  async getAll(options): Promise<{ data: T[]; total: number }> {
+    // Logic for filtering, sorting, pagination...
+    return { data: filteredData, total: filteredData.length };
+  }
+
+  async getById(id: string): Promise<T> {
+    // Find by ID implementation...
+    return item;
+  }
+
+  // Other CRUD operations...
+}
 ```
 
+### 2. Facade Pattern for API Routes
+
+API routes act as facades that shield clients from the complexity of data retrieval and processing.
+
 **Implementation Details**:
-- Replace OAuth flow with mock authentication simulation
-- Use static file data for Google Drive interface
-- Create realistic sample calendar events
-- Implement static task lists that mimic Google Tasks
-- Simulate connection/disconnection functionality
-- Maintain visual consistency with actual integration
+- Consistent URL structure for all entity types
+- Standardized error handling and response formats
+- Query parameter processing for filtering and pagination
 
-### 3. Equipment Catalog Simulation
-
-```mermaid
-flowchart TD
-    A[Equipment UI] --> B[Equipment Hooks]
-    B --> C[Mock Equipment Service]
-    C --> D[Static Equipment Data]
-    D --> E[Categories]
-    D --> F[Items]
-    D --> G[Availability]
-    D --> H[Pricing]
+```typescript
+// Example Facade in API Route
+export async function GET(request: NextRequest) {
+  try {
+    // Process request parameters
+    // Apply filtering, sorting, pagination
+    // Return standardized response
+    return NextResponse.json(result);
+  } catch (error) {
+    // Standardized error handling
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'An error occurred' },
+      { status: 500 }
+    );
+  }
+}
 ```
 
+### 3. Context Provider Pattern for Authentication
+
+React Context API is used to provide application-wide access to authentication state.
+
 **Implementation Details**:
-- Create comprehensive mock equipment data with:
-  - Categories and subcategories
-  - Equipment specifications
-  - Availability dates
-  - Pricing information
-  - Images and descriptions
-- Implement filtering and search functionality
-- Simulate the rental selection process
+- `AuthContext` with authentication methods and user state
+- `localStorage` for session persistence
+- Role-based access control via the context
 
-### 4. Event Management Simulation
+```typescript
+// Example Context Pattern
+export const AuthContext = createContext<AuthContextType>(null);
 
-```mermaid
-flowchart TD
-    A[Event UI] --> B[Event Hooks]
-    B --> C[Mock Event Service]
-    C --> D[Static Event Data]
-    D --> E[Event Details]
-    D --> F[Timelines]
-    D --> G[Staff Assignments]
-    D --> H[Equipment Lists]
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  
+  // Auth methods implementation...
+  
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signIn,
+      signOut,
+      // ...other methods
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Hook for consuming the context
+export const useAuth = () => useContext(AuthContext);
 ```
 
+### 4. Strategy Pattern for Mock Implementations
+
+Different strategies for data handling without changing the client interface.
+
 **Implementation Details**:
-- Create mock event data with:
-  - Event details and metadata
-  - Timeline information
-  - Equipment lists
-  - Staff assignments
-  - Venue specifications
-- Simulate the event creation and management workflow
-- Maintain timeline visualization functionality
+- Mock service implementations follow the same interface as real services
+- Client code doesn't need to change when switching implementations
+- Different mock strategies can be swapped in for testing or demonstration purposes
 
-## Implementation Best Practices
+## Architectural Patterns
 
-1. **Separation of Concerns**:
-   - Keep mock services separate from UI components
-   - Use clear interfaces that match original services
-   - Maintain the component hierarchy of the original application
+### 1. Clean Architecture
 
-2. **Code Organization**:
-   - Create a dedicated `/lib/mock` directory for all mock implementations
-   - Organize mock data by entity type
-   - Use consistent naming conventions for mock services
+The wireframe maintains a clean architecture approach with distinct layers and dependency rules.
 
-3. **Visual Consistency**:
-   - Ensure all mock data drives the same visual experience
-   - Maintain responsive design with mock data
-   - Preserve loading states and transitions
+**Layers**:
+- **Presentation Layer**: UI components, pages
+- **Application Layer**: API routes, business logic
+- **Domain Layer**: Core entities and business rules
+- **Infrastructure Layer**: Mock data, services
 
-4. **Type Safety**:
-   - Maintain TypeScript interfaces from the original application
-   - Ensure mock data adheres to defined types
-   - Use type guards for runtime validation
+**Dependency Rule**: Inner layers don't depend on outer layers. This enables:
+- UI components that remain the same regardless of data source
+- Business logic that doesn't know if it's working with mock or real data
+- Entity definitions that remain consistent throughout the application
 
-5. **Performance Considerations**:
-   - Simulate realistic loading times
-   - Implement pagination for large data sets
-   - Optimize static asset loading
+### 2. Mock Service Layer Architecture
 
-6. **Development Workflow**:
-   - Create mock implementations incrementally
-   - Test each mock service independently
-   - Ensure cross-browser compatibility
+A dedicated layer for mock services that replicate the behavior of real external services.
 
-## Migration Strategy
+**Implementation Details**:
+- Mock services in `frontend/lib/mock/services/*`
+- Each service focuses on a specific domain (auth, data, storage)
+- Simulated network delays and error handling
 
-When implementing these patterns, we'll follow this sequence:
+### 3. Feature-Oriented API Structure
 
-1. Create the core mock data structure and authentication system
-2. Replace Supabase client with mock data services
-3. Implement mock API routes
-4. Replace integration adapters with mock facades
-5. Update UI components to work with mock services
-6. Test the complete application flow
-7. Optimize for deployment
+API routes are organized based on features and entity types, making the codebase intuitive to navigate.
 
-This structured approach ensures we maintain visual and functional consistency while removing backend dependencies.
+**Structure**:
+```
+frontend/app/api/mock/
+├── equipment/route.ts
+├── events/route.ts
+├── users/route.ts
+└── ...other entity types
+```
+
+## Frontend Patterns
+
+### 1. Atomic Design for Components
+
+Components are designed following atomic design principles:
+- **Atoms**: Basic UI elements (buttons, inputs)
+- **Molecules**: Combinations of atoms (form fields, cards)
+- **Organisms**: Complex UI sections (forms, lists)
+- **Templates**: Page layouts
+- **Pages**: Complete screens with data
+
+### 2. Compound Components for Complex UI
+
+Complex UI elements are built using the compound component pattern, where multiple components work together through context.
+
+### 3. Container/Presentation Pattern
+
+Separation of data fetching and presentation logic:
+- **Containers**: Connect to services, manage state and data flow
+- **Presentation Components**: Focus purely on rendering UI based on props
+
+## Communication Patterns
+
+### 1. HTTP Request/Response
+
+The primary communication pattern uses the fetch API for client-server communication, maintained even in the wireframe:
+
+```typescript
+// Example HTTP request pattern in a hook
+export function useData(entityType: string) {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`/api/mock/${entityType}`);
+        const result = await response.json();
+        setData(result.data);
+      } catch (error) {
+        console.error(`Error fetching ${entityType}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [entityType]);
+  
+  return { data, loading };
+}
+```
+
+### 2. Event-Based Communication
+
+For some UI interactions, event-based patterns are used to decouple components:
+- Custom events for specific UI actions
+- Hooks for subscribing to app-wide events
+
+## Wireframe-Specific Patterns
+
+### 1. Direct Import Pattern
+
+In the wireframe-only implementation, we've moved from conditional imports to direct imports:
+
+**Before (Conditional):**
+```typescript
+const AuthService = isWireframeMode 
+  ? import('@/lib/mock/services/mock-auth-service')
+  : import('@/lib/services/auth-service');
+```
+
+**After (Direct):**
+```typescript
+import { mockAuthService } from '@/lib/mock/services/mock-auth-service';
+```
+
+This simplifies the codebase and makes it more maintainable for the wireframe version.
+
+### 2. Always-Enabled Configuration
+
+Configuration values are hardcoded rather than dynamically determined:
+
+**Before (Dynamic):**
+```typescript
+export const WIREFRAME_MODE = 
+  process.env.NEXT_PUBLIC_WIREFRAME_MODE === 'true' || false;
+```
+
+**After (Hardcoded):**
+```typescript
+export const wireframeConfig = {
+  enabled: true,
+  // Other configurations...
+};
+```
+
+This removes complexity and makes the wireframe implementation more predictable.
+
+### 3. Middleware Always-Redirect Pattern
+
+The middleware now always redirects to mock implementations without conditional logic:
+
+**Before (Conditional):**
+```typescript
+if (WIREFRAME_MODE && isApiRequest) {
+  // Redirect to mock API
+}
+```
+
+**After (Always Redirect):**
+```typescript
+if (isApiRequest) {
+  // Always redirect to mock API
+}
+```
+
+## Benefits of These Patterns
+
+1. **Separation of Concerns**: Each component has a single responsibility
+2. **Testability**: Mock services can be easily tested in isolation
+3. **Maintainability**: Clean structure makes the codebase easier to navigate
+4. **Scalability**: Easy to add new features or entity types
+5. **Consistency**: Standardized patterns across the application
+6. **Simplicity**: Direct implementation makes the codebase simpler to understand
+
+These patterns together create a robust architecture for the wireframe implementation that maintains visual fidelity and user experience while removing backend dependencies.

@@ -1,40 +1,73 @@
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import ProfileForm from './ProfileForm'
+'use client'
 
-export default async function ProfilePage() {
-  const supabase = await createServerClient()
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import ProfileForm from './ProfileForm'
+import wireframeConfig from '@/lib/mock/config'
+
+export default function ProfilePage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
+  useEffect(() => {
+    const loadUserFromLocalStorage = async () => {
+      setLoading(true)
+      
+      try {
+        // Simulate network delay
+        await wireframeConfig.delay(500)
+        
+        // Get user from localStorage
+        const storedUser = localStorage.getItem('mockUser')
+        
+        if (!storedUser) {
+          // If not authenticated, redirect to login
+          router.push('/auth/login')
+          return
+        }
+        
+        // Parse the user data
+        const userData = JSON.parse(storedUser)
+        setUser(userData)
+        
+        // Create a profile object based on the user data
+        // This simulates what would be fetched from a profiles table
+        const profileData = {
+          id: userData.id,
+          email: userData.email,
+          full_name: userData.firstName && userData.lastName 
+            ? `${userData.firstName} ${userData.lastName}` 
+            : userData.firstName || userData.lastName || '',
+          role: userData.role,
+          phone: userData.phoneNumber || '',
+          avatar_url: userData.avatarUrl || null,
+          created_at: userData.created_at,
+          updated_at: new Date().toISOString()
+        }
+        
+        setProfile(profileData)
+      } catch (error) {
+        console.error('Error loading user from localStorage:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadUserFromLocalStorage()
+  }, [router])
   
-  // If no session, redirect to login
-  if (!session) {
-    redirect('/auth/login')
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    )
   }
   
-  // Get user details
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Get profile details from the database
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user?.id)
-    .single()
-    
-  // Get user role from the user_roles table
-  const { data: userRole } = await supabase
-    .from('user_roles')
-    .select('*')
-    .eq('user_id', user?.id)
-    .single()
-  
-  // If profile exists but doesn't have a role from the user_roles table,
-  // update it with the role from user_roles
-  if (profile && userRole && profile.role !== userRole.role) {
-    // This is just for display purposes in the UI, not for actual permissions
-    profile.role = userRole.role
+  if (!user) {
+    return null // This will not render as we redirect in the useEffect
   }
 
   return (
@@ -43,6 +76,9 @@ export default async function ProfilePage() {
         <div className="rounded-lg bg-white p-8 shadow-lg">
           <div className="pb-5 border-b border-gray-200 mb-8">
             <h1 className="text-3xl font-bold leading-tight text-gray-900">My Profile</h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Update your account information and preferences
+            </p>
           </div>
           
           <ProfileForm user={user} profile={profile} />

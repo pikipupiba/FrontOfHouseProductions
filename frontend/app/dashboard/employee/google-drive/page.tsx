@@ -1,45 +1,168 @@
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GoogleDriveFiles } from '../google-workspace/GoogleDriveFiles';
+import { MockGoogleDriveFiles } from '../google-workspace/MockGoogleDriveFiles';
 import GoogleConnectButton from '../google-workspace/GoogleConnectButton';
+import wireframeConfig from '@/lib/mock/config';
 
-export const metadata = {
-  title: 'Google Drive - Front of House Productions',
-  description: 'Access your Google Drive files',
-};
-
-export default async function GoogleDrivePage() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  // Check if user is logged in
-  if (!session) {
-    redirect('/auth/login');
+export default function GoogleDrivePage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        console.log('Google Drive Page initializing...'); // Debug logging
+        
+        // Test localStorage capability
+        try {
+          const testKey = `test_storage_${Date.now()}`;
+          localStorage.setItem(testKey, 'test');
+          const testResult = localStorage.getItem(testKey);
+          localStorage.removeItem(testKey);
+          
+          if (testResult !== 'test') {
+            throw new Error('localStorage test failed');
+          }
+        } catch (storageError) {
+          console.error('localStorage access error in Google Drive page:', storageError);
+          throw new Error('Your browser seems to be blocking storage access. Please ensure cookies and site data are enabled.');
+        }
+        
+        // Simulate network delay
+        await wireframeConfig.delay(300);
+        
+        // Get current user from localStorage (set during mock auth)
+        console.log('Checking for stored user data...'); // Debug logging
+        const storedUser = localStorage.getItem('mockUser');
+        
+        // If no user data in localStorage, redirect to login
+        if (!storedUser) {
+          console.log('No user data found, redirecting to login...'); // Debug logging
+          setErrorMsg('No user session found. Please log in again.');
+          window.location.href = '/auth/login';
+          return;
+        }
+        
+        // Parse the user data
+        let userData;
+        try {
+          userData = JSON.parse(storedUser);
+          console.log('Found user data:', userData.email, 'Role:', userData.role); // Debug logging
+          setUser(userData);
+          
+          // Get user role (in mock implementation, role is directly on the user object)
+          const userRole = userData.role || 'customer';
+          
+          // Verify the current user is allowed to access this page
+          if (userRole !== 'employee' && userRole !== 'manager') {
+            console.log('User does not have permission to access employee dashboard, redirecting...'); // Debug logging
+            window.location.href = '/dashboard';
+            return;
+          }
+          
+          // Check if Google Workspace is connected
+          const workspaceConnected = localStorage.getItem('googleWorkspaceConnected') === 'true';
+          setIsConnected(workspaceConnected);
+          console.log('Google Workspace connected:', workspaceConnected); // Debug logging
+          
+        } catch (parseError) {
+          console.error('Error parsing user data:', parseError);
+          localStorage.removeItem('mockUser'); // Clean up invalid data
+          setErrorMsg('Invalid user data. Please log in again.');
+          window.location.href = '/auth/login';
+          return;
+        }
+        
+      } catch (error: any) {
+        console.error('Error in Google Drive page initialization:', error);
+        setErrorMsg(error?.message || 'Error loading dashboard. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadUserData();
+  }, [router]);
+  
+  // Show a loading indicator while initializing
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Google Drive...</p>
+          
+          {/* Display error message if any */}
+          {errorMsg && (
+            <div className="mt-6 rounded-md bg-red-50 p-4 max-w-md mx-auto">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Authentication Error</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{errorMsg}</p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => window.location.href = '/auth/login'}
+                      className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-3 py-2 text-sm font-medium leading-4 text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      Return to login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
-
-  // Check if the user is an employee
-  const { data: userRole } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .single();
-
-  if (!userRole || (userRole.role !== 'employee' && userRole.role !== 'manager')) {
-    redirect('/dashboard');
+  
+  // If there's an error but we're not in loading state
+  if (!isLoading && errorMsg) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="rounded-md bg-red-50 p-4 max-w-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Authentication Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{errorMsg}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/auth/login'}
+                  className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-3 py-2 text-sm font-medium leading-4 text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Return to login
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  // Check if user has Google Workspace connected
-  const { data: oauthCredentials } = await supabase
-    .from('integration_cache.oauth_credentials')
-    .select('*')
-    .eq('service_name', 'google-workspace')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-
-  const isConnected = !!oauthCredentials;
-
+  
+  // Main content when authenticated
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -77,7 +200,7 @@ export default async function GoogleDrivePage() {
             </p>
             {isConnected && (
               <p className="text-sm text-gray-600">
-                Last updated: {new Date(oauthCredentials.updated_at).toLocaleString()}
+                Last updated: {new Date().toLocaleString()}
               </p>
             )}
           </div>
@@ -89,7 +212,7 @@ export default async function GoogleDrivePage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">My Files</h2>
           <Suspense fallback={<div className="p-4 text-center">Loading files...</div>}>
-            <GoogleDriveFiles />
+            <MockGoogleDriveFiles />
           </Suspense>
         </div>
       ) : (

@@ -1,72 +1,102 @@
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import DashboardCard from '../DashboardCard'
-import SignOutButton from '../SignOutButton'
-import PortalSelector from '../PortalSelector'
+'use client';
 
-export default async function CustomerPortal() {
-  const supabase = await createServerClient()
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import DashboardCard from '../DashboardCard';
+import SignOutButton from '../SignOutButton';
+import PortalSelector from '../PortalSelector';
+import { mockCustomers } from '@/lib/mock/data/customers';
+import { mockRentals } from '@/lib/mock/data/rentals';
+import wireframeConfig from '@/lib/mock/config';
+
+export default function CustomerPortal() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [availableRoles, setAvailableRoles] = useState(['customer']);
+  const [currentRole, setCurrentRole] = useState('customer');
   
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  // If no session, redirect to login
-  if (!session) {
-    redirect('/auth/login')
-  }
-  
-  // Get user details
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Get profile details
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user?.id)
-    .single()
-  
-  // In development, we don't enforce role-based access to allow testing
-  // For production, uncomment the following block to enforce role-based access
-  
-  // Get user role from the user_roles table
-  const { data: userRole, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role, is_approved')
-    .eq('user_id', user?.id)
-    .single()
-  
-  // Debug what's happening with the profile and role fetches
-  console.log("Debug - User ID:", user?.id);
-  console.log("Debug - Profile:", profile ? "Found" : "Not Found");
-  console.log("Debug - Profile Error:", profileError?.message || "None");
-  console.log("Debug - User Role:", userRole?.role || "Not Found");
-  console.log("Debug - Role Error:", roleError?.message || "None");
-  
-  // TEMPORARILY REMOVE ALL REDIRECTS FOR TESTING
-  /* 
-  if (!profile) {
-    redirect('/dashboard')
-  }
-  */
-  
-  // Just log the actual role for debugging purposes
-  console.log("User actual role:", userRole?.role);
-  
-  // Determine available roles for portal selector
-  const currentRole = userRole?.role || 'customer'
-  const isRoleApproved = userRole?.is_approved !== false
-  const availableRoles = ['customer']
-  
-  // Only show roles that are approved
-  if (isRoleApproved) {
-    if (currentRole === 'employee' || currentRole === 'manager') {
-      availableRoles.push('employee')
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        // Simulate network delay
+        await wireframeConfig.delay(600);
+        
+        // Get current user from localStorage (set during mock auth)
+        const storedUser = localStorage.getItem('mockUser');
+        
+        // If no user data in localStorage, redirect to login
+        if (!storedUser) {
+          router.push('/auth/login');
+          return;
+        }
+        
+        // Parse the user data
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        
+        // Get user role (in mock implementation, role is directly on the user object)
+        const userRole = userData.role || 'customer';
+        setCurrentRole(userRole);
+        
+        // Determine available roles for portal selector
+        const roles = ['customer'];
+        
+        // Add roles based on user's highest role
+        if (userRole === 'employee' || userRole === 'manager') {
+          roles.push('employee');
+        }
+        
+        if (userRole === 'manager') {
+          roles.push('manager');
+        }
+        
+        setAvailableRoles(roles);
+        
+        // Find customer data if user is a customer
+        if (userData.id) {
+          // Find the corresponding customer data
+          const customer = mockCustomers.find(c => c.userId === userData.id);
+          if (customer) {
+            setCustomerData(customer);
+            
+            // Get related rentals
+            await wireframeConfig.delay(300);
+            const userRentals = mockRentals.filter(rental => 
+              rental.customerId === userData.id
+            );
+            
+            // We could store these rentals in state if needed for the UI
+          }
+        }
+      } catch (error) {
+        console.error('Error loading customer portal data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
     
-    if (currentRole === 'manager') {
-      availableRoles.push('manager')
-    }
+    loadUserData();
+  }, [router]);
+  
+  // Show a loading indicator while data is loading
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If user is not authenticated, this should not render (redirect happens in useEffect)
+  if (!user) {
+    return null;
   }
   
   return (
@@ -78,6 +108,11 @@ export default async function CustomerPortal() {
             <p className="mt-1 text-sm text-gray-500">
               Manage your rentals, events, and documents
             </p>
+            {customerData && (
+              <p className="mt-2 text-sm font-medium text-indigo-600">
+                Welcome, {customerData.primaryContact.name} | {customerData.companyName}
+              </p>
+            )}
           </div>
           
           {/* Portal selector component */}
@@ -190,5 +225,5 @@ export default async function CustomerPortal() {
         </div>
       </div>
     </div>
-  )
+  );
 }

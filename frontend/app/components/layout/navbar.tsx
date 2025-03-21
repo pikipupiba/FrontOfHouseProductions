@@ -3,14 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import type { User } from '@supabase/supabase-js';
+import wireframeConfig from '@/lib/mock/config';
 
 export default function Navbar() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -34,40 +33,60 @@ export default function Navbar() {
     };
   }, []);
   
-  // Fetch user data
+  // Load user data from localStorage
   useEffect(() => {
-    async function loadUserSession() {
-      const supabase = createClient();
+    const loadUserFromLocalStorage = () => {
+      setLoading(true);
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        // Get user role from the user_roles table
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (roleData) {
-          setUserRole(roleData.role);
+      try {
+        // Get user from localStorage
+        const storedUser = localStorage.getItem('mockUser');
+        
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setUserRole(userData.role);
         }
+      } catch (error) {
+        console.error('Error loading user from localStorage:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    }
+    };
     
-    loadUserSession();
+    loadUserFromLocalStorage();
+    
+    // Add event listener for storage changes (for cross-tab synchronization)
+    window.addEventListener('storage', loadUserFromLocalStorage);
+    return () => {
+      window.removeEventListener('storage', loadUserFromLocalStorage);
+    };
   }, []);
   
+  // Handle sign out 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    // Simulate network delay
+    await wireframeConfig.delay(300);
+    
+    // Clear user from localStorage
+    localStorage.removeItem('mockUser');
+    
+    // Update state
     setUser(null);
+    setUserRole(null);
     setDropdownOpen(false);
+    
+    // Redirect to home page
     router.push('/');
+  };
+  
+  // Handle switch account
+  const handleSwitchAccount = () => {
+    // Close dropdown
+    setDropdownOpen(false);
+    
+    // Redirect to login page
+    router.push('/auth/login');
   };
 
   return (
@@ -128,26 +147,20 @@ export default function Navbar() {
                         <div className="px-4 py-2 border-b">
                           <p className="text-sm font-medium text-gray-700">{user.email}</p>
                           {userRole && (
-                            <p className="text-xs text-gray-500 capitalize">{userRole} Portal</p>
+                            <p className="text-xs text-gray-500 capitalize">
+                              {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Portal
+                            </p>
                           )}
                         </div>
                         
                         {/* Menu items */}
-                        <Link 
-                          href="#" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
-                          role="menuitem"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          Notifications
-                        </Link>
                         <Link 
                           href={userRole ? `/dashboard/${userRole}` : "/dashboard"} 
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                           role="menuitem"
                           onClick={() => setDropdownOpen(false)}
                         >
-                          Show Dashboard
+                          My Dashboard
                         </Link>
                         <Link 
                           href="/dashboard/profile" 
@@ -157,6 +170,16 @@ export default function Navbar() {
                         >
                           Edit Profile
                         </Link>
+                        
+                        {/* New "Switch Account" button */}
+                        <button 
+                          onClick={handleSwitchAccount}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                        >
+                          Switch Account
+                        </button>
+                        
                         <button 
                           onClick={handleSignOut}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -227,21 +250,15 @@ export default function Navbar() {
               <>
                 <div className="px-3 py-2 font-medium text-gray-700">
                   <span className="block text-sm font-medium">{user.email}</span>
-                  {userRole && <span className="block text-xs text-gray-500 capitalize">{userRole} Portal</span>}
+                  {userRole && <span className="block text-xs text-gray-500 capitalize">{userRole.charAt(0).toUpperCase() + userRole.slice(1)} Portal</span>}
                 </div>
-                <Link 
-                  href="#" 
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Notifications
-                </Link>
+                
                 <Link 
                   href={userRole ? `/dashboard/${userRole}` : "/dashboard"} 
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Show Dashboard
+                  My Dashboard
                 </Link>
                 <Link 
                   href="/dashboard/profile" 
@@ -250,6 +267,18 @@ export default function Navbar() {
                 >
                   Edit Profile
                 </Link>
+                
+                {/* New "Switch Account" button for mobile */}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleSwitchAccount();
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                >
+                  Switch Account
+                </button>
+                
                 <button
                   onClick={() => {
                     handleSignOut();
@@ -261,7 +290,11 @@ export default function Navbar() {
                 </button>
               </>
             ) : (
-              <Link href="/auth/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700">
+              <Link 
+                href="/auth/login" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Login
               </Link>
             )}

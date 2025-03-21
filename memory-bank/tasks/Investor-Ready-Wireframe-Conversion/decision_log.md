@@ -1,233 +1,405 @@
 # Decision Log: Investor-Ready-Wireframe-Conversion
 
-This document records key decisions made during the wireframe conversion process, including rationales and alternatives considered.
+This document records key decisions made during the implementation of the investor-ready wireframe conversion task.
 
-## 1. Mock Authentication Approach
+## Decision 1: Pivot to Wireframe-Only Implementation
 
-**Decision**: Implement a localStorage-based authentication system with a React Context Provider
+**Date:** March 20, 2025
 
-**Date**: 3/20/2025
+**Context:** 
+The initial approach for the wireframe conversion was to implement a dual-mode architecture that would support both real and mock implementations, toggled by environment variables. This approach added significant complexity to the codebase, with conditional imports, environment variable checking, and dual implementation paths.
 
-**Rationale**:
-- Provides persistence across page refreshes without backend
-- Simpler implementation than cookie-based alternatives
-- Closely mirrors how the Supabase auth provider works
-- Can easily simulate session expiration
-- Compatible with Next.js App Router
+**Options Considered:**
 
-**Alternatives Considered**:
-- Cookie-based authentication: More secure but adds complexity
-- In-memory only: Simpler but would lose state on refresh
-- URL-based parameters: Visible in the URL, less secure and less user-friendly
+1. **Dual-Mode Architecture:**
+   - Pros: Allows switching between real and mock implementations for development and demo purposes
+   - Cons: Complex codebase with conditional logic, harder to maintain, increased risk of bugs
 
-**Implementation Notes**:
-- Will need to handle role-based access control in the context provider
-- Will simulate JWT tokens for authentication header consistency
-- Will preserve the same interface as the current auth service
+2. **Wireframe-Only Implementation:**
+   - Pros: Simpler codebase, easier to maintain, focused on demo purpose
+   - Cons: No ability to use real services, separate codebase from production version
 
-## 2. Mock Data Structure
+**Decision:**
+We decided to pivot to a wireframe-only implementation, removing all conditional logic and environment variable checks. This approach simplifies the codebase and makes it more maintainable for its specific purpose - investor demonstrations.
 
-**Decision**: Use TypeScript files with exported constants for mock data rather than JSON files
+**Reasoning:**
+1. The primary goal is to create a demonstration version for investors, not a dual-purpose application
+2. Wireframe-only approach reduces complexity and potential bugs
+3. Simpler codebase is easier to maintain and extend with future mock features
+4. Removes need for environment variables and configuration
+5. Allows for focused optimization of the demo experience
 
-**Date**: 3/20/2025
+**Implementation Plan:**
+1. Remove environment variable checks and conditional imports
+2. Replace conditional imports with direct imports of mock services
+3. Update middleware to always redirect to mock API routes
+4. Add a visual indicator for wireframe mode
+5. Update documentation to reflect the wireframe-only approach
 
-**Rationale**:
-- Allows using TypeScript types for data validation
-- Easier to implement references between entities
-- Can include helper functions in the same files
-- Better IDE support with autocompletion
-- Can use comments to document data structure
+**Status:** Implemented
 
-**Alternatives Considered**:
-- JSON files: More realistic for API responses but less flexible
-- Database in the browser: More powerful but excessive for wireframe needs
-- Dynamic data generation: More realistic variation but less predictable
+---
 
-**Implementation Notes**:
-- Will organize by entity type (users, equipment, etc.)
-- Will maintain referential integrity between entities
-- Will include realistic test data covering all edge cases
+## Decision 2: Add Wireframe Indicator Component
 
-## 3. API Route Implementation
+**Date:** March 20, 2025
 
-**Decision**: Keep API routes but replace backend calls with mock data
+**Context:**
+Users needed a clear indication that they are using a demo/wireframe version of the application, not the real production version.
 
-**Date**: 3/20/2025
+**Options Considered:**
 
-**Rationale**:
-- Maintains the same fetching pattern as the real application
-- Allows realistic network timing simulation
-- Preserves API contract for future implementation
-- Easier transition back to real API when needed
-- Better separation of concerns
+1. **No Indicator:**
+   - Pros: Clean interface without extra elements
+   - Cons: Users might mistake the demo for the real application
 
-**Alternatives Considered**:
-- Direct data imports: Simpler but breaks the API contract pattern
-- Client-side only data access: Reduces code duplication but breaks architectural pattern
-- Service worker mock: More powerful but adds complexity
+2. **Subtle Indicator (Icon or Watermark):**
+   - Pros: Minimal interface disruption
+   - Cons: Easy to miss, might not be clear enough
 
-**Implementation Notes**:
-- Will add artificial delays to simulate network latency
-- Will implement the same error handling as the real API
-- Will maintain exact response format for compatibility
+3. **Persistent Banner:**
+   - Pros: Clear indication that cannot be missed
+   - Cons: Takes up screen space
 
-## 4. Integration Simplification
+**Decision:**
+We decided to implement a persistent bottom banner that clearly indicates the application is in demo mode.
 
-**Decision**: Create facade classes that mimic real integration adapters with simplified implementations
+**Reasoning:**
+1. A persistent banner ensures users are always aware they're using a demo
+2. Bottom placement minimizes interference with main application content
+3. Distinctive styling (yellow background) makes it stand out
+4. Simple text clearly communicates the mode
 
-**Date**: 3/20/2025
+**Implementation:**
+```tsx
+export default function WireframeIndicator() {
+  return (
+    <div className="fixed bottom-0 left-0 w-full bg-yellow-100 text-yellow-800 py-2 px-4 text-center text-sm z-50 shadow-md">
+      <p className="font-medium">
+        <span className="inline-block mr-2">💡</span>
+        <span>Investor Demo Mode - Using Mock Data</span>
+        <span className="inline-block ml-2">💡</span>
+      </p>
+    </div>
+  );
+}
+```
 
-**Rationale**:
-- Preserves the adapter pattern from the real implementation
-- Maintains the same interface for UI components
-- Allows simulation of connection states and errors
-- Provides realistic behavior for demonstrations
-- Easier to add real implementation later
+**Status:** Implemented
 
-**Alternatives Considered**:
-- Completely stubbed interfaces: Simpler but less realistic
-- Simplified real API calls: More realistic but requires credentials
-- Component-specific mock data: Easier to implement but breaks architecture
+---
 
-**Implementation Notes**:
-- Will implement all methods from the real adapters
-- Will use static data but simulate asynchronous behavior
-- Will simulate connection status and authentication flows
+## Decision 3: Use Generic Data Service for All Entity Types
 
-## 5. Authentication Flow Visualization
+**Date:** March 20, 2025
 
-**Decision**: Implement a simulated OAuth flow for Google authentication
+**Context:**
+The application needs to handle multiple entity types (users, events, equipment, etc.) with similar CRUD operations for each.
 
-**Date**: 3/20/2025
+**Options Considered:**
 
-**Rationale**:
-- Maintains visual fidelity of the authentication experience
-- Demonstrates the complete user journey
-- Shows the integration capabilities to investors
-- Requires no real Google credentials
-- Can control the simulated response
+1. **Separate Service Implementation for Each Entity:**
+   - Pros: Tailored implementation for each entity's specific needs
+   - Cons: Significant code duplication, more maintenance overhead
 
-**Alternatives Considered**:
-- Remove OAuth flow entirely: Simpler but less comprehensive
-- Use a simplified login form: Less realistic
-- Fake redirect: Confusing user experience
+2. **Generic Service with Type Parameters:**
+   - Pros: Reusable code, consistent interface, type safety
+   - Cons: Potential limitations for very specialized entity operations
 
-**Implementation Notes**:
-- Will create a simulated Google login page
-- Will handle the redirect flow with predefined responses
-- Will preserve the visual appearance of the OAuth process
+**Decision:**
+We implemented a generic `MockDataService<T>` class that can be instantiated for any entity type.
 
-## 6. Deployment Strategy
+**Reasoning:**
+1. Reduces code duplication significantly
+2. Provides a consistent interface for all entity types
+3. Maintains type safety through TypeScript generics
+4. Allows for entity-specific customization through factory functions
+5. Consistent error handling and response formats
 
-**Decision**: Optimize for static generation where possible but maintain SSR compatibility
+**Implementation:**
+```typescript
+export class MockDataService<T extends Entity> {
+  // Implementation with generic type
+}
 
-**Date**: 3/20/2025
+// Create specialized instances via a factory function
+export function createMockDataService<T extends Entity>(
+  initialData: T[],
+  entityName: string
+): MockDataService<T> {
+  return new MockDataService<T>(initialData, entityName);
+}
 
-**Rationale**:
-- Faster page loads for demonstration
-- Reduced server dependencies
-- Better reliability for presentations
-- Simpler deployment process
-- Maintains Next.js SSR pattern for future implementation
+// Usage for different entity types
+const usersService = createMockDataService<User>(mockUsers, 'User');
+const eventsService = createMockDataService<Event>(mockEvents, 'Event');
+```
 
-**Alternatives Considered**:
-- Full static export: Maximum performance but loses SSR features
-- Keep full SSR: More aligned with production but more complex
-- Switch to a simpler framework: Would require significant rewrite
+**Status:** Implemented
 
-**Implementation Notes**:
-- Will use Next.js Static Site Generation where appropriate
-- Will maintain compatibility with Vercel deployment
-- Will optimize build configuration for wireframe mode
+---
 
-## 7. Environment Configuration
+## Decision 4: Simulate Network Delays and Random Failures
 
-**Decision**: Use environment variables to toggle between mock and real implementations
+**Date:** March 20, 2025
 
-**Date**: 3/20/2025
+**Context:**
+Real-world applications have network latency and occasional failures. A realistic wireframe should simulate these characteristics to give an accurate representation of the application behavior.
 
-**Rationale**:
-- Allows easy switching between wireframe and real modes
-- Maintains a single codebase for both versions
-- Simplifies future transition back to full implementation
-- Follows established pattern for environment configuration
-- Allows partial enabling of real features if needed
+**Options Considered:**
 
-**Alternatives Considered**:
-- Separate codebase: Cleaner separation but maintenance overhead
-- Build-time configuration: Simpler but less flexible
-- Feature flags system: More powerful but overkill for this use case
+1. **No Delay or Failures:**
+   - Pros: Simpler implementation, faster responses
+   - Cons: Unrealistic user experience, no error handling testing
 
-**Implementation Notes**:
-- Will use `NEXT_PUBLIC_MOCK_ENABLED=true` as the main toggle
-- Will implement helper functions to check environment
-- Will allow configuration of simulation parameters (delays, etc.)
+2. **Fixed Delays Only:**
+   - Pros: Predictable behavior, simulates basic network latency
+   - Cons: No randomness, no failure scenarios
 
-## 8. Role-Based Access Control
+3. **Configurable Delays and Random Failures:**
+   - Pros: Realistic simulation of network behavior, tests error handling
+   - Cons: Added implementation complexity, potentially confusing for demos
 
-**Decision**: Implement client-side authorization checks without Supabase RLS
+**Decision:**
+We implemented configurable delays and random failure simulation in the wireframe configuration:
 
-**Date**: 3/20/2025
+**Reasoning:**
+1. Provides a more realistic user experience
+2. Tests the application's error handling and loading states
+3. Allows for demonstration of error scenarios without real errors
+4. Configurable failure rate prevents excessive failures during demos
+5. Helps identify UI issues with loading and error states
 
-**Rationale**:
-- Simulates the security model without database dependencies
-- Maintains the same UI behavior for different roles
-- Allows demonstration of role-specific features
-- Simpler implementation than true RLS
-- Fits with localStorage-based authentication
+**Implementation:**
+```typescript
+export const wireframeConfig = {
+  // Default delay for mock operations
+  defaultDelay: 300,
+  
+  // Random failure probability (0-1)
+  failureProbability: 0.02,
+  
+  // Utility functions
+  delay: async (ms?: number): Promise<void> => {
+    return new Promise(resolve => 
+      setTimeout(resolve, ms ?? wireframeConfig.defaultDelay)
+    );
+  },
+  
+  // Simulate occasional failures
+  maybeFailRandomly: async (): Promise<void> => {
+    if (Math.random() < wireframeConfig.failureProbability) {
+      throw new Error('Simulated random failure');
+    }
+  }
+};
+```
 
-**Alternatives Considered**:
-- Ignore role restrictions: Simpler but less realistic
-- Mock RLS in API routes: More complex but more accurate
-- Hardcode specific views: Inflexible for demonstrations
+**Status:** Implemented
 
-**Implementation Notes**:
-- Will implement helper functions for authorization checks
-- Will maintain the same redirect pattern as the real app
-- Will include adequate protection for demonstration purposes only
+---
 
-## 9. Visual Consistency Approach
+## Decision 5: Standardized API Response Format
 
-**Decision**: Prioritize visual components and defer non-visual optimizations
+**Date:** March 20, 2025
 
-**Date**: 3/20/2025
+**Context:**
+The application needs consistent API response formats for predictable client handling.
 
-**Rationale**:
-- Focus on what investors will actually see
-- Maximize impact with limited development time
-- Maintain the appearance of full functionality
-- Ensure a smooth demonstration experience
-- Align with the primary goal of investor presentations
+**Options Considered:**
 
-**Alternatives Considered**:
-- Full functionality simulation: More comprehensive but time-consuming
-- Skeleton-only interface: Faster but less impressive
-- Screenshots/mockups: Much simpler but not interactive
+1. **Entity-Specific Response Formats:**
+   - Pros: Tailored to each entity's specific needs
+   - Cons: Inconsistent handling on the client, more complex client code
 
-**Implementation Notes**:
-- Will implement all visual components with full styling
-- Will prioritize user flows most likely to be demonstrated
-- Will ensure smooth transitions and loading states
+2. **Simple Array/Object Responses:**
+   - Pros: Simpler implementation
+   - Cons: Limited metadata for pagination, filtering, sorting
 
-## 10. Mock Data Quantity vs. Quality
+3. **Standardized Response Object:**
+   - Pros: Consistent client handling, supports pagination, rich metadata
+   - Cons: Slightly more complex implementation
 
-**Decision**: Create fewer, high-quality mock entities rather than many low-detail entities
+**Decision:**
+We implemented a standardized response format for all API endpoints:
 
-**Date**: 3/20/2025
+**Reasoning:**
+1. Consistent response format simplifies client code
+2. Support for pagination, sorting, and filtering
+3. Clear error handling with status codes
+4. Matches industry best practices for RESTful APIs
 
-**Rationale**:
-- More realistic demonstration with detailed mock data
-- Better showcases UI capabilities with rich content
-- Easier to maintain and ensure consistency
-- More compelling for investor presentations
-- Better demonstrates real-world use cases
+**Implementation:**
+```typescript
+// Success response format
+return NextResponse.json({
+  data: items,
+  total: total,
+  page: page,
+  totalPages: totalPages
+});
 
-**Alternatives Considered**:
-- Large quantity of simple entities: More realistic volume but less detail
-- Dynamically generated data: More variety but less control
-- Minimal placeholder data: Faster to implement but less impressive
+// Error response format
+return NextResponse.json(
+  { error: error.message },
+  { status: errorStatusCode }
+);
+```
 
-**Implementation Notes**:
-- Will create 5-10 high-quality examples for each entity type
-- Will ensure diverse examples covering different scenarios
-- Will focus on realism and completeness of each example
+**Status:** Implemented
+
+---
+
+## Decision 6: API Route Structure for Entity Types
+
+**Date:** March 20, 2025
+
+**Context:**
+The application needs a logical structure for its API routes to handle different entity types.
+
+**Options Considered:**
+
+1. **Single API Route With Entity Parameter:**
+   - Pros: Centralized handling
+   - Cons: Complex routing logic, less RESTful
+
+2. **Separate Route Files for Each Entity:**
+   - Pros: Clean separation, RESTful structure, clear organization
+   - Cons: Some code duplication
+
+3. **Dynamic API Route Structure:**
+   - Pros: Flexible routing with fewer files
+   - Cons: More complex implementation, potential performance issues
+
+**Decision:**
+We chose to implement separate route files for each entity type under a common `/api/mock` directory.
+
+**Reasoning:**
+1. Clean separation of concerns
+2. RESTful URL structure
+3. Easy to understand and navigate
+4. Consistent with Next.js file-based routing
+5. Easier to manage entity-specific customizations
+
+**Implementation:**
+```
+frontend/app/api/mock/
+├── users/route.ts
+├── events/route.ts
+├── equipment/route.ts
+└── ...other entities
+```
+
+**Status:** Implemented
+
+---
+
+## Decision 7: Authentication Persistence with localStorage
+
+**Date:** March 20, 2025
+
+**Context:**
+The wireframe needs to simulate authentication persistence across page refreshes.
+
+**Options Considered:**
+
+1. **No Persistence (Memory Only):**
+   - Pros: Simpler implementation
+   - Cons: Session lost on refresh, poor user experience
+
+2. **Cookie-Based Persistence:**
+   - Pros: Similar to real auth cookies, automatic sending with requests
+   - Cons: More complex implementation, cookie management
+
+3. **localStorage Persistence:**
+   - Pros: Simple implementation, persists across refreshes, no backend needed
+   - Cons: Not secure (but acceptable for a demo)
+
+**Decision:**
+We implemented authentication persistence using localStorage for the wireframe.
+
+**Reasoning:**
+1. Simple to implement
+2. Persists across page refreshes
+3. No need for secure authentication in a demo
+4. Mimics the behavior of real authentication
+5. No backend dependencies
+
+**Implementation:**
+```typescript
+// Store user when logged in
+localStorage.setItem('mockUser', JSON.stringify(user));
+
+// Retrieve on initialization
+useEffect(() => {
+  const storedUser = localStorage.getItem('mockUser');
+  if (storedUser) {
+    setUser(JSON.parse(storedUser));
+  }
+}, []);
+
+// Clear on logout
+localStorage.removeItem('mockUser');
+```
+
+**Status:** Implemented
+
+---
+
+## Decision 8: Full Static Mock Data vs. Dynamic Generation
+
+**Date:** March 20, 2025
+
+**Context:**
+The wireframe needs realistic data for demonstrations.
+
+**Options Considered:**
+
+1. **Generated Data On-the-Fly:**
+   - Pros: Can create large datasets, always different
+   - Cons: Less controllable, may not show targeted scenarios
+
+2. **Fully Static Predefined Data:**
+   - Pros: Predictable, carefully crafted for demos
+   - Cons: Limited dataset, potentially repetitive
+
+3. **Base Static Data with Dynamic Extensions:**
+   - Pros: Core predictable data with some variability
+   - Cons: More complex implementation
+
+**Decision:**
+We chose to use fully static predefined data for the wireframe.
+
+**Reasoning:**
+1. Complete control over the demonstration data
+2. Ability to craft specific scenarios for investor demos
+3. Predictable behavior for presentations
+4. Simpler implementation
+5. Easier to maintain and update
+
+**Implementation:**
+```typescript
+export const mockUsers: User[] = [
+  // Carefully crafted mock data
+  {
+    id: 'user-1',
+    name: 'Alex Johnson',
+    role: 'admin',
+    // ...other properties
+  },
+  // ...more users
+];
+```
+
+**Status:** Implemented
+
+---
+
+## Future Decisions
+
+The following decisions are being considered but have not yet been finalized:
+
+1. **Offline Mode Support:** Whether to add offline capabilities to the wireframe
+2. **Enhanced Visual Mockups:** Whether to include visual mockups of planned features
+3. **Data Persistence:** Whether to add persistence for changes made during demos
+4. **Animation Improvements:** Whether to enhance loading and transition animations

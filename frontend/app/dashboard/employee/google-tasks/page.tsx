@@ -1,44 +1,51 @@
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GoogleTaskLists } from '../google-workspace/GoogleTaskLists';
+import { MockGoogleTasksList } from '../google-workspace/MockGoogleTasksList';
 import GoogleConnectButton from '../google-workspace/GoogleConnectButton';
 
-export const metadata = {
-  title: 'Google Tasks - Front of House Productions',
-  description: 'Manage your Google Tasks',
-};
-
-export default async function GoogleTasksPage() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  // Check if user is logged in
-  if (!session) {
-    redirect('/auth/login');
+export default function GoogleTasksPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Load user from localStorage
+    const storedUser = localStorage.getItem('mockUser');
+    if (!storedUser) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    const parsedUser = JSON.parse(storedUser);
+    setUser(parsedUser);
+    
+    // Check if user is an employee or manager
+    if (parsedUser.role !== 'employee' && parsedUser.role !== 'manager') {
+      router.push('/dashboard');
+      return;
+    }
+    
+    // Check Google Workspace connection status from localStorage
+    const authState = localStorage.getItem('googleWorkspaceAuthState');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      setIsConnected(parsed.isAuthenticated);
+      if (parsed.expiresAt) {
+        setLastUpdated(new Date(parsed.expiresAt).toISOString());
+      }
+    }
+    
+    setLoading(false);
+  }, [router]);
+  
+  if (loading) {
+    return <div className="p-8 text-center">Loading...</div>;
   }
-
-  // Check if the user is an employee
-  const { data: userRole } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .single();
-
-  if (!userRole || (userRole.role !== 'employee' && userRole.role !== 'manager')) {
-    redirect('/dashboard');
-  }
-
-  // Check if user has Google Workspace connected
-  const { data: oauthCredentials } = await supabase
-    .from('integration_cache.oauth_credentials')
-    .select('*')
-    .eq('service_name', 'google-workspace')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-
-  const isConnected = !!oauthCredentials;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -46,16 +53,16 @@ export default async function GoogleTasksPage() {
         <h1 className="text-3xl font-bold">Google Tasks</h1>
         <div className="flex space-x-4">
           <Link 
-            href="/dashboard/employee/google-calendar" 
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50"
-          >
-            Google Calendar
-          </Link>
-          <Link 
             href="/dashboard/employee/google-drive" 
             className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50"
           >
             Google Drive
+          </Link>
+          <Link 
+            href="/dashboard/employee/google-calendar" 
+            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50"
+          >
+            Google Calendar
           </Link>
           <Link 
             href="/dashboard/employee" 
@@ -75,9 +82,9 @@ export default async function GoogleTasksPage() {
                 {isConnected ? 'Connected' : 'Not Connected'}
               </span>
             </p>
-            {isConnected && (
+            {isConnected && lastUpdated && (
               <p className="text-sm text-gray-600">
-                Last updated: {new Date(oauthCredentials.updated_at).toLocaleString()}
+                Last updated: {new Date(lastUpdated).toLocaleString()}
               </p>
             )}
           </div>
@@ -87,10 +94,8 @@ export default async function GoogleTasksPage() {
 
       {isConnected ? (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
-          <Suspense fallback={<div className="p-4 text-center">Loading tasks...</div>}>
-            <GoogleTaskLists />
-          </Suspense>
+          <h2 className="text-xl font-semibold mb-4">Your Tasks</h2>
+          <MockGoogleTasksList />
         </div>
       ) : (
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">

@@ -1,44 +1,51 @@
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GoogleCalendarEvents } from '../../employee/google-workspace/GoogleCalendarEvents';
+import { MockGoogleCalendarEvents } from '../../employee/google-workspace/MockGoogleCalendarEvents';
 import GoogleConnectButton from '../../employee/google-workspace/GoogleConnectButton';
 
-export const metadata = {
-  title: 'Google Calendar - Front of House Productions',
-  description: 'View your Google Calendar events',
-};
-
-export default async function ManagerGoogleCalendarPage() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  // Check if user is logged in
-  if (!session) {
-    redirect('/auth/login');
+export default function ManagerGoogleCalendarPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Load user from localStorage
+    const storedUser = localStorage.getItem('mockUser');
+    if (!storedUser) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    const parsedUser = JSON.parse(storedUser);
+    setUser(parsedUser);
+    
+    // Check if user is a manager
+    if (parsedUser.role !== 'manager') {
+      router.push('/dashboard');
+      return;
+    }
+    
+    // Check Google Workspace connection status from localStorage
+    const authState = localStorage.getItem('googleWorkspaceAuthState');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      setIsConnected(parsed.isAuthenticated);
+      if (parsed.expiresAt) {
+        setLastUpdated(new Date(parsed.expiresAt).toISOString());
+      }
+    }
+    
+    setLoading(false);
+  }, [router]);
+  
+  if (loading) {
+    return <div className="p-8 text-center">Loading...</div>;
   }
-
-  // Check if the user is a manager
-  const { data: userRole } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .single();
-
-  if (!userRole || userRole.role !== 'manager') {
-    redirect('/dashboard');
-  }
-
-  // Check if user has Google Workspace connected
-  const { data: oauthCredentials } = await supabase
-    .from('integration_cache.oauth_credentials')
-    .select('*')
-    .eq('service_name', 'google-workspace')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-
-  const isConnected = !!oauthCredentials;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -75,9 +82,9 @@ export default async function ManagerGoogleCalendarPage() {
                 {isConnected ? 'Connected' : 'Not Connected'}
               </span>
             </p>
-            {isConnected && (
+            {isConnected && lastUpdated && (
               <p className="text-sm text-gray-600">
-                Last updated: {new Date(oauthCredentials.updated_at).toLocaleString()}
+                Last updated: {new Date(lastUpdated).toLocaleString()}
               </p>
             )}
           </div>
@@ -88,9 +95,7 @@ export default async function ManagerGoogleCalendarPage() {
       {isConnected ? (
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Upcoming Calendar Events</h2>
-          <Suspense fallback={<div className="p-4 text-center">Loading calendar events...</div>}>
-            <GoogleCalendarEvents />
-          </Suspense>
+          <MockGoogleCalendarEvents />
         </div>
       ) : (
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">

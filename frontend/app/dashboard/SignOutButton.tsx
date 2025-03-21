@@ -1,14 +1,17 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
 export default function SignOutButton() {
   const router = useRouter()
   
   const handleSignOut = async () => {
-    const supabase = createBrowserClient()
-    await supabase.auth.signOut()
+    // For the wireframe version, just clear localStorage and navigate away
+    localStorage.removeItem('mockUser')
+    
+    // Add a small delay to simulate auth process
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
     router.push('/')
     router.refresh()
   }

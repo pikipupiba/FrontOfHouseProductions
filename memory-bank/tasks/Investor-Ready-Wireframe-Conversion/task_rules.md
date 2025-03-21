@@ -1,211 +1,360 @@
 # Task Rules: Investor-Ready-Wireframe-Conversion
 
-This document outlines the guidelines and principles to follow when converting the FOHP application to a wireframe version for investor presentations.
+This document outlines the guidelines, constraints, and best practices for implementing the wireframe conversion. These rules ensure that the wireframe maintains visual fidelity and a realistic user experience while simplifying the implementation.
 
-## Visual Fidelity Rules
+## Core Principles
 
-### 1. Maintain Exact Visual Appearance
-
-- **All UI components must look identical** to the production version
-- **Do not simplify visual elements** even if backend is simplified
-- **Preserve all transitions and animations** for a smooth experience
-- **Keep all responsive design elements** working across device sizes
-- **Maintain exact color schemes, fonts, and styling** from the original
-
-### 2. Interaction Behavior
-
-- **All clickable elements must provide visual feedback** when clicked
-- **Navigation between pages must work identically** to production
-- **Error states and loading indicators** must be preserved
-- **Form validations** should work on the client side
-- **Modal dialogs** and other interactive elements must behave normally
-
-### 3. Data Representation
-
-- **Use realistic mock data** that resembles actual production data
-- **Maintain consistent entity relationships** in mock data
-- **Display appropriate loading states** before showing mock data
-- **Ensure pagination controls work** even if using static data
-- **Implement sorting and filtering** to work with mock data
-
-## Simplification Boundaries
-
-### 1. What Can Be Simplified
-
-- **Backend connections** (replace with mock data)
-- **Authentication mechanisms** (replace with mock auth)
-- **Database operations** (replace with static/local data)
-- **External API calls** (replace with static responses)
-- **Server-side processing** (simulate with client-side logic when possible)
-- **Environment variables** for external services
-- **Build and deployment complexity**
-
-### 2. What Cannot Be Simplified
-
-- **UI components and visual design**
-- **User flows and navigation**
-- **Role-based interface differences**
-- **Error handling and display**
-- **Form validation and user feedback**
-- **Responsive design behavior**
-- **Performance optimization** (should still feel snappy)
-
-## Mock Data Guidelines
-
-### 1. Data Quality
-
-- **Create detailed mock entities** with all fields used in the UI
-- **Use realistic values and formats** that mirror production data
-- **Include edge cases** like long text, special characters, etc.
-- **Maintain referential integrity** between related entities
-- **Create diverse example data** showing various scenarios
-
-### 2. Data Quantity
-
-- Provide **enough mock data to demonstrate pagination** where relevant
-- Include **5-10 quality examples for each entity type**
-- Ensure **at least 3 examples of each category or subtype**
-- Have **sufficient data for meaningful filtering/sorting demos**
-- Create **comprehensive data sets for featured sections** likely to be shown
-
-### 3. Data Consistency
-
-- **All mock data should tell a coherent story**
-- **Dates should make chronological sense**
-- **User data should be consistent across views**
-- **Related entities should maintain logical relationships**
-- **Status indicators should reflect a realistic system state**
+1. **Preserve Visual Fidelity**: The wireframe must visually match the original application.
+2. **Simplify Implementation**: Remove real service dependencies while maintaining the appearance of functionality.
+3. **Maintain Type Safety**: Use TypeScript types throughout to ensure consistency.
+4. **Simulate Realistic Behavior**: Add delays and occasional errors to simulate real API behavior.
+5. **Document Everything**: Ensure all mock implementations are well-documented.
 
 ## Implementation Rules
 
-### 1. Code Structure
+### Configuration
 
-- **Maintain the same component hierarchy** as the production version
-- **Keep file naming consistent** with the existing patterns
-- **Separate mock implementations** into their own directories/files
-- **Use consistent patterns** for all mock implementations
-- **Comment mock implementations clearly** for future reference
+1. ✅ **Direct Configuration**: Use hardcoded configuration values rather than environment variables.
+   ```typescript
+   // INSTEAD OF
+   const isEnabled = process.env.NEXT_PUBLIC_FEATURE_ENABLED === 'true';
+   
+   // USE
+   const isEnabled = true;
+   ```
 
-### 2. TypeScript Requirements
+2. ✅ **Simplified Delay Configuration**: Use a consistent delay approach for all mock operations.
+   ```typescript
+   await wireframeConfig.delay(); // Uses default delay
+   await wireframeConfig.delay(500); // Uses custom delay
+   ```
 
-- **Maintain all existing TypeScript interfaces**
-- **Mock data must conform to existing types**
-- **Do not use `any` type** in mock implementations
-- **Include proper JSDoc comments** for mock functions
-- **Maintain strict type checking** throughout the codebase
+3. ✅ **Direct Imports Only**: Import mock services directly without conditional logic.
+   ```typescript
+   // INSTEAD OF
+   const service = isWireframeMode ? mockService : realService;
+   
+   // USE
+   import { mockService } from '@/lib/mock/services/mock-service';
+   ```
 
-### 3. Error Handling
+### Data Structure
 
-- **Simulate realistic error scenarios**
-- **Implement proper error boundaries**
-- **Handle edge cases gracefully**
-- **Maintain error messaging consistent with production**
-- **Allow testing of error states for demonstrations**
+1. ✅ **Type Definitions First**: Define complete types before implementing mock data.
+   ```typescript
+   export interface User {
+     id: string;
+     name: string;
+     email: string;
+     role: UserRole;
+     // ...other properties
+   }
+   
+   export const mockUsers: User[] = [
+     // Implementation follows the type definition
+   ];
+   ```
 
-## Performance Rules
+2. ✅ **Realistic Mock Data**: Mock data should be realistic and comprehensive.
+   - Include edge cases (empty values, long text)
+   - Cover all possible statuses
+   - Use realistic naming (no "Test User 1")
+   - Include data relationships (foreign keys)
 
-### 1. Loading Experience
+3. ✅ **Consistent ID Formats**: Use consistent, predictable ID formats.
+   ```typescript
+   // Equipment: 'equip-1', 'equip-2'
+   // Users: 'user-1', 'user-2'
+   // Events: 'evt-1', 'evt-2'
+   ```
 
-- **Simulate realistic loading times** (brief but noticeable)
-- **Implement all loading indicators** from the production version
-- **Ensure smooth transitions** between loading and loaded states
-- **Cache mock data appropriately** to avoid performance issues
-- **Add artificial delays consistent with operation complexity**
+### API Implementation
 
-### 2. Resource Usage
+1. ✅ **Standardized Response Format**: All API responses should follow the same format.
+   ```typescript
+   // Success format
+   return NextResponse.json({ 
+     data: result,
+     total: result.length,
+     page: page || 1,
+     totalPages: totalPages || 1
+   });
+   
+   // Error format
+   return NextResponse.json(
+     { error: errorMessage },
+     { status: errorStatusCode }
+   );
+   ```
 
-- **Keep bundle size minimal** by removing unused dependencies
-- **Optimize mock asset sizes** for quick loading
-- **Ensure responsive performance** on demo devices
-- **Minimize memory usage** for reliable demonstrations
-- **Avoid console errors and warnings** that might be visible
+2. ✅ **Complete Error Handling**: Handle all error cases in mock implementations.
+   ```typescript
+   try {
+     // Implementation
+   } catch (error) {
+     console.error('Error description:', error);
+     return NextResponse.json(
+       { error: error instanceof Error ? error.message : 'An unknown error occurred' },
+       { status: 500 }
+     );
+   }
+   ```
 
-## Investor Presentation Rules
+3. ✅ **Query Parameter Support**: Support filtering, sorting, and pagination via query parameters.
+   ```typescript
+   // Extract and process query parameters consistently
+   const searchParams = request.nextUrl.searchParams;
+   const pageStr = searchParams.get('page');
+   const pageSizeStr = searchParams.get('pageSize');
+   const sortBy = searchParams.get('sortBy');
+   // ...process parameters
+   ```
 
-### 1. Demonstration Flow
+### UI Components
 
-- **Optimize for key user journeys** most likely to be shown
-- **Ensure consistent state** between demonstration sections
-- **Prepare "happy path" data** for smooth demonstrations
-- **Include impressive but realistic examples** in mock data
-- **Make role switching easy** for demonstrating different perspectives
+1. ✅ **Loading States**: All components must handle loading states correctly.
+   ```tsx
+   const [loading, setLoading] = useState(true);
+   
+   // Show loading indicator during data fetch
+   if (loading) {
+     return <LoadingSpinner />;
+   }
+   ```
 
-### 2. Edge Case Handling
+2. ✅ **Error States**: Components must handle and display error states.
+   ```tsx
+   const [error, setError] = useState<string | null>(null);
+   
+   // Show error message if present
+   if (error) {
+     return <ErrorMessage message={error} />;
+   }
+   ```
 
-- **Gracefully handle unexpected inputs** during demonstrations
-- **Prevent demonstration-breaking errors** with fallbacks
-- **Provide reset options** if a demonstration goes off track
-- **Ensure mock data covers likely demonstration scenarios**
-- **Prepare alternative paths** for flexible presentations
+3. ✅ **Empty States**: Components should handle empty data states gracefully.
+   ```tsx
+   if (data.length === 0) {
+     return <EmptyState message="No items found" />;
+   }
+   ```
 
-## Authentication Rules
+4. ✅ **Keep Styles Intact**: Do not modify component styling or layout.
+   ```tsx
+   // KEEP all className attributes and style objects intact
+   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   ```
 
-### 1. Mock Authentication
+### Authentication
 
-- **Allow instant login** with predefined credentials
-- **Provide sample users for each role** (customer, employee, manager)
-- **Simulate session management** including expiration
-- **Maintain authentication UI** identical to production
-- **Implement visual feedback** for authentication actions
+1. ✅ **Mock Auth Provider**: Use a mock auth provider with localStorage persistence.
+   ```tsx
+   const AuthContext = createContext<AuthContextType>(null);
+   
+   export function AuthProvider({ children }) {
+     // Implementation with localStorage for session persistence
+   }
+   ```
 
-### 2. Role-Based Access
+2. ✅ **Simulate Auth Flow**: Simulate complete authentication flows, including:
+   - Login/logout
+   - Session expiration
+   - Role-based access
+   - OAuth flows (visually only)
 
-- **Enforce role-based UI differences** consistent with production
-- **Restrict access to role-specific pages** based on user role
-- **Maintain the same navigation options** based on user type
-- **Display role-appropriate content** throughout the application
-- **Simulate permission checking** for sensitive operations
+3. ✅ **Role-Based UI**: Preserve role-specific UI differences.
+   ```tsx
+   // Implement role checks in components
+   {user.role === 'admin' && <AdminControls />}
+   {user.role === 'customer' && <CustomerDashboard />}
+   ```
 
-## Integration Presentation Rules
+### Integration Simulation
 
-### 1. Third-Party Integration Display
+1. ✅ **Maintain Adapter Pattern**: Keep the adapter pattern for all integrations.
+   ```typescript
+   // Mock adapter implementation
+   export class MockGoogleWorkspaceAdapter implements GoogleWorkspaceAdapterInterface {
+     // Implementation
+   }
+   ```
 
-- **Show realistic integration connection status**
-- **Display mock data from "connected" services**
-- **Simulate connection/disconnection processes**
-- **Maintain visual elements of integration components**
-- **Create believable representation of external data**
+2. ✅ **Connection State**: Simulate connection state for integrations.
+   ```typescript
+   // Simulate connection state
+   private connected = true;
+   
+   isConnected(): boolean {
+     return this.connected;
+   }
+   ```
 
-### 2. Google Workspace Representation
-
-- **Show realistic file lists for Google Drive**
-- **Display plausible calendar events for Google Calendar**
-- **Present believable task lists for Google Tasks**
-- **Maintain the same UI components as the real integration**
-- **Simulate the connection status and authentication flow**
-
-## Deployment Rules
-
-### 1. Vercel Configuration
-
-- **Optimize for Vercel deployment**
-- **Minimize environment variable requirements**
-- **Ensure static generation works where appropriate**
-- **Configure build settings for optimal performance**
-- **Test deployment prior to investor presentations**
-
-### 2. Environment Setup
-
-- **Document all necessary environment variables**
-- **Provide default mock values for required settings**
-- **Create a simplified deployment process**
-- **Ensure repeatable builds** for consistent demonstrations
-- **Minimize external dependencies** for reliable operation
+3. ✅ **Realistic Authentication Flows**: Simulate realistic authentication flows for integrations.
+   ```typescript
+   async connect(): Promise<boolean> {
+     await wireframeConfig.delay(800); // Longer delay
+     this.connected = true;
+     return true;
+   }
+   ```
 
 ## Documentation Rules
 
-### 1. Code Documentation
+1. ✅ **Code Comments**: Include descriptive comments for all mock implementations.
+   ```typescript
+   /**
+    * Mock implementation of Google Workspace adapter
+    * Simulates Google Drive, Calendar, and Tasks functionality
+    * without actual API connections
+    */
+   ```
 
-- **Comment all mock implementations clearly**
-- **Document simulation behaviors and limitations**
-- **Explain artificial delays and their purpose**
-- **Provide context for mock data design choices**
-- **Include references to production implementations**
+2. ✅ **Type Definitions**: Include complete type definitions with documentation.
+   ```typescript
+   /**
+    * Represents a user in the system
+    */
+   export interface User {
+     /**
+      * Unique identifier for the user
+      */
+     id: string;
+     
+     /**
+      * User's email address, used for authentication
+      */
+     email: string;
+     
+     // ...other properties with documentation
+   }
+   ```
 
-### 2. User Documentation
+3. ✅ **README Updates**: Update README files to reflect wireframe-only implementation.
+   ```markdown
+   # Mock Services
+   
+   This directory contains mock implementations of services for the wireframe version.
+   These implementations simulate the behavior of real services without external dependencies.
+   ```
 
-- **Create simple login instructions** for demonstration users
-- **Document role-specific features** accessible in the wireframe
-- **Provide notes on wireframe limitations** if needed
-- **Include guidance for presenters** on optimal demonstration flows
-- **Document reset procedures** if demonstration issues occur
+## Testing Rules
+
+1. ✅ **Manual Verification**: All wireframe functionality must be manually verified:
+   - Test all user roles
+   - Test all CRUD operations
+   - Test filtering, sorting, pagination
+   - Test error handling
+
+2. ✅ **Cross-Browser Testing**: Test the wireframe in multiple browsers:
+   - Chrome
+   - Firefox
+   - Safari
+   - Edge
+
+3. ✅ **Responsive Testing**: Test across different screen sizes:
+   - Desktop
+   - Tablet
+   - Mobile
+
+## Deployment Rules
+
+1. ✅ **Vercel Compatibility**: Ensure compatibility with Vercel deployment:
+   - No server-side dependencies
+   - Proper handling of environment variables
+   - Static generation where possible
+
+2. ✅ **Performance Optimization**: Optimize for performance:
+   - Minimize bundle size
+   - Optimize images
+   - Efficient rendering
+
+3. ✅ **Environment Cleanup**: Remove unused environment variables and configurations.
+
+## Exclusion Rules
+
+The following items should be completely removed or replaced:
+
+1. ✅ **Supabase Client Initialization**: Remove all Supabase client initialization.
+   ```typescript
+   // REMOVE
+   import { createClient } from '@supabase/supabase-js';
+   const supabase = createClient(...);
+   ```
+
+2. ✅ **Database Migrations**: Remove or comment out database migration files.
+
+3. ✅ **External API Keys**: Remove all external API keys and credentials.
+
+4. ✅ **Feature Flags**: Remove feature flags and conditional environment checks.
+   ```typescript
+   // REMOVE
+   if (process.env.NEXT_PUBLIC_FEATURE_ENABLED === 'true') {
+     // Feature implementation
+   }
+   ```
+
+## Additions for Wireframe-Only Approach
+
+1. ✅ **Wireframe Indicator**: Add a visual indicator showing the application is in wireframe/demo mode.
+   ```tsx
+   export default function WireframeIndicator() {
+     return (
+       <div className="fixed bottom-0 left-0 w-full bg-yellow-100 text-yellow-800 py-2 px-4 text-center text-sm z-50">
+         Investor Demo Mode - Using Mock Data
+       </div>
+     );
+   }
+   ```
+
+2. ✅ **Simplified Configuration**: Use a simplified configuration approach with hardcoded values.
+   ```typescript
+   export const wireframeConfig = {
+     enabled: true,
+     defaultDelay: 300,
+     // Other configurations
+   };
+   ```
+
+3. ✅ **Direct Mock Imports**: Use direct imports of mock services without conditional logic.
+   ```typescript
+   // INSTEAD OF
+   const service = isWireframeMode ? mockService : realService;
+   
+   // USE
+   import { mockService } from '@/lib/mock/services/mock-service';
+   ```
+
+4. ✅ **Always-Redirect Middleware**: Update middleware to always redirect to mock implementations.
+   ```typescript
+   if (isApiRequest) {
+     // Always redirect to mock API
+     return NextResponse.rewrite(new URL(`/api/mock${path}`, request.url));
+   }
+   ```
+
+## Maintenance Guidelines
+
+1. ✅ **Documentation Updates**: Update documentation when making changes to the wireframe implementation.
+
+2. ✅ **Consistency Check**: Ensure all mock implementations follow the same patterns and conventions.
+
+3. ✅ **Visual Verification**: Verify that visual appearance matches the original application after changes.
+
+## Implementation Checklist
+
+- [x] Create mock directory structure
+- [x] Define mock data structures and types
+- [x] Implement mock authentication
+- [x] Create mock API routes
+- [x] Update components to use mock services
+- [x] Add wireframe indicator
+- [x] Simplify configuration
+- [x] Update middleware
+- [x] Update documentation
+- [ ] Test all functionality
+- [ ] Optimize for performance
+- [ ] Deploy to Vercel
+
+## Conclusion
+
+By following these rules, the wireframe implementation will maintain visual fidelity and user experience while removing backend dependencies. This approach creates a clean, maintainable codebase focused solely on the investor demonstration use case.

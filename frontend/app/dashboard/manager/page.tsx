@@ -1,81 +1,185 @@
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardCard from '../DashboardCard'
 import SignOutButton from '../SignOutButton'
 import PortalSelector from '../PortalSelector'
+import wireframeConfig from '@/lib/mock/config'
 
-export default async function ManagerPortal() {
-  const supabase = await createServerClient()
+export default function ManagerPortal() {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [availableRoles, setAvailableRoles] = useState<string[]>(['customer'])
+  const [currentRole, setCurrentRole] = useState<string>('manager')
   
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  // If no session, redirect to login
-  if (!session) {
-    redirect('/auth/login')
-  }
-  
-  // Get user details
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Get profile details
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user?.id)
-    .single()
-  
-  // In development, we don't enforce role-based access to allow testing
-  // For production, uncomment the following block to enforce role-based access
-  
-  // Get user role from the user_roles table
-  const { data: userRole, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role, is_approved')
-    .eq('user_id', user?.id)
-    .single()
-  
-  // Debug what's happening with the profile and role fetches
-  console.log("Debug - User ID:", user?.id);
-  console.log("Debug - Profile:", profile ? "Found" : "Not Found");
-  console.log("Debug - Profile Error:", profileError?.message || "None");
-  console.log("Debug - User Role:", userRole?.role || "Not Found");
-  console.log("Debug - Role Error:", roleError?.message || "None");
-  
-  // TEMPORARILY REMOVE ALL REDIRECTS FOR TESTING
-  /* 
-  if (!profile) {
-    redirect('/dashboard')
-  }
-  */
-  
-  // Just log the actual role for debugging purposes
-  console.log("User actual role:", userRole?.role);
-  
-  /* 
-  // For production, uncomment this to enforce role-based access
-  if (!userRole || userRole.role !== 'manager' || !userRole.is_approved) {
-    redirect('/dashboard')
-  }
-  */
-  
-  // Determine available roles for portal selector
-  const currentRole = userRole?.role || 'customer'
-  const isRoleApproved = userRole?.is_approved !== false
-  const availableRoles = ['customer']
-  
-  // Only show roles that are approved
-  if (isRoleApproved) {
-    if (currentRole === 'employee' || currentRole === 'manager') {
-      availableRoles.push('employee')
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        console.log('Manager Dashboard initializing...') // Debug logging
+        
+        // Test localStorage capability
+        try {
+          const testKey = `test_storage_${Date.now()}`
+          localStorage.setItem(testKey, 'test')
+          const testResult = localStorage.getItem(testKey)
+          localStorage.removeItem(testKey)
+          
+          if (testResult !== 'test') {
+            throw new Error('localStorage test failed')
+          }
+        } catch (storageError) {
+          console.error('localStorage access error in manager dashboard:', storageError)
+          throw new Error('Your browser seems to be blocking storage access. Please ensure cookies and site data are enabled.')
+        }
+        
+        // Simulate network delay
+        await wireframeConfig.delay(300)
+        
+        // Get current user from localStorage (set during mock auth)
+        console.log('Checking for stored user data...') // Debug logging
+        const storedUser = localStorage.getItem('mockUser')
+        
+        // If no user data in localStorage, redirect to login
+        if (!storedUser) {
+          console.log('No user data found, redirecting to login...') // Debug logging
+          setErrorMsg('No user session found. Please log in again.')
+          window.location.href = '/auth/login'
+          return
+        }
+        
+        // Parse the user data
+        let userData
+        try {
+          userData = JSON.parse(storedUser)
+          console.log('Found user data:', userData.email, 'Role:', userData.role) // Debug logging
+          setUser(userData)
+          
+          // Get user role (in mock implementation, role is directly on the user object)
+          const userRole = userData.role || 'customer'
+          setCurrentRole(userRole)
+          
+          // In the mock wireframe, all roles are approved
+          const isRoleApproved = true
+          
+          // Determine available roles for portal selector
+          const roles = ['customer']
+          
+          // Only show roles that are approved (in the wireframe, all are approved)
+          if (isRoleApproved) {
+            if (userRole === 'employee' || userRole === 'manager') {
+              roles.push('employee')
+            }
+            
+            if (userRole === 'manager') {
+              roles.push('manager')
+            }
+          }
+          
+          setAvailableRoles(roles)
+          
+          // Verify the current user is allowed to access this page (managers only)
+          if (userRole !== 'manager') {
+            console.log('User does not have permission to access manager dashboard, redirecting...') // Debug logging
+            window.location.href = '/dashboard'
+            return
+          }
+          
+        } catch (parseError) {
+          console.error('Error parsing user data:', parseError)
+          localStorage.removeItem('mockUser') // Clean up invalid data
+          setErrorMsg('Invalid user data. Please log in again.')
+          window.location.href = '/auth/login'
+          return
+        }
+        
+      } catch (error: any) {
+        console.error('Error in manager dashboard initialization:', error)
+        setErrorMsg(error?.message || 'Error loading dashboard. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
     }
     
-    if (currentRole === 'manager') {
-      availableRoles.push('manager')
-    }
+    loadUserData()
+  }, [router])
+  
+  // Show a loading indicator while initializing
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading manager dashboard...</p>
+          
+          {/* Display error message if any */}
+          {errorMsg && (
+            <div className="mt-6 rounded-md bg-red-50 p-4 max-w-md mx-auto">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Authentication Error</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{errorMsg}</p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => window.location.href = '/auth/login'}
+                      className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-3 py-2 text-sm font-medium leading-4 text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      Return to login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
   
+  // If there's an error but we're not in loading state
+  if (!isLoading && errorMsg) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="rounded-md bg-red-50 p-4 max-w-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Authentication Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{errorMsg}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/auth/login'}
+                  className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-3 py-2 text-sm font-medium leading-4 text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Return to login
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+  // Main dashboard content when authenticated
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

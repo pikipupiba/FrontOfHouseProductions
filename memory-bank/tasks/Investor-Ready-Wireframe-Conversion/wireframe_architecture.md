@@ -1,420 +1,218 @@
 # Wireframe Architecture: Investor-Ready-Wireframe-Conversion
 
-This document details the architectural changes required to convert the current FOHP application into a wireframe version for investor demonstrations, focusing on the technical implementation.
+This document outlines the architecture for the investor-ready wireframe implementation, which has been simplified to a wireframe-only approach for more straightforward development and maintenance.
 
-## Current vs. Wireframe Architecture
+## High-Level Architecture
 
-### Current Architecture
-
-```mermaid
-flowchart TD
-    Client[Client Browser] --> NextJS[Next.js Frontend]
-    NextJS --> API[Next.js API Routes]
-    NextJS --> SSR[Server-Side Rendering]
-    API --> Supabase[Supabase Backend]
-    SSR --> Supabase
-    Supabase --> DB[(PostgreSQL Database)]
-    Supabase --> Auth[Authentication]
-    Supabase --> Storage[File Storage]
-    API --> IntManager[Integration Manager]
-    IntManager --> ExtAPIs[External APIs]
-```
-
-### Wireframe Architecture
+The wireframe-only architecture simplifies the original application by removing all external dependencies and replacing them with mock implementations:
 
 ```mermaid
 flowchart TD
-    Client[Client Browser] --> NextJS[Next.js Frontend]
-    NextJS --> MockAPI[Mock API Routes]
-    NextJS --> CSR[Client-Side Rendering]
-    MockAPI --> MockData[Static JSON Data]
-    CSR --> MockData
-    MockAPI --> MockAuth[Mock Authentication]
-    CSR --> LocalStorage[(localStorage/sessionStorage)]
-    MockAPI --> MockIntegration[Mock Integration Layer]
-```
-
-## Key Architecture Changes
-
-### 1. Authentication Architecture
-
-#### Current
-- JWT-based authentication through Supabase Auth
-- Server-side session validation
-- Role-based security with database RLS policies
-- OAuth integration for Google authentication
-
-#### Wireframe
-- ClientAuth React Context for managing authentication state
-- localStorage-based user session management
-- Role-based UI control without database RLS
-- Simulated OAuth flows without actual provider integration
-
-```mermaid
-flowchart TD
-    Login[Login UI] --> AuthContext[Auth Context Provider]
-    AuthContext --> LocalStorage[localStorage]
-    AuthContext --> MockUsers[Mock User Data]
-    AuthContext --> MockSession[Mock Session]
+    UI[UI Components] --> Auth[Mock Auth Provider]
+    UI --> API[Mock API Routes]
+    UI --> Integration[Mock Integration Manager]
     
-    Component[Protected Component] --> AuthContext
-    AuthContext --> RoleCheck{Role Check}
-    RoleCheck -->|Valid Role| Render[Render Component]
-    RoleCheck -->|Invalid Role| Redirect[Redirect]
+    API --> DataServices[Mock Data Services]
+    Integration --> Adapters[Mock Adapters]
+    
+    DataServices --> MockData[Mock Data]
+    Adapters --> MockData
+    
+    subgraph "Mock Implementation"
+        Auth
+        API
+        Integration
+        DataServices
+        Adapters
+        MockData
+    end
+
+    subgraph "Visual Indicators"
+        Indicator[Wireframe Indicator]
+    end
+
+    UI --> Indicator
 ```
 
-### 2. Data Access Architecture
+## Directory Structure
 
-#### Current
-- Supabase database access through client library
-- Server-side data fetching with security policies
-- Real-time subscriptions for data updates
-- Database migrations for schema management
-
-#### Wireframe
-- Static JSON data files for all entities
-- Mock data service with CRUD simulation
-- Client-side data filtering and pagination
-- No database migrations or schema management
-
-```mermaid
-flowchart TD
-    Component[UI Component] --> DataHook[Data Hook]
-    DataHook --> MockService[Mock Data Service]
-    MockService --> JSONData[Static JSON Files]
-    MockService --> Filtering[Client-Side Filtering]
-    MockService --> Pagination[Client-Side Pagination]
-    MockService --> CRUDSim[CRUD Simulation]
-```
-
-### 3. Integration Architecture
-
-#### Current
-- Integration Manager coordinates service adapters
-- Each external service has a dedicated adapter
-- API routes secure external service credentials
-- Database caching for external data
-- Background sync jobs for data freshness
-
-#### Wireframe
-- Mock integration manager with static responses
-- Mock adapters replacing real service adapters
-- API routes returning static mock data
-- No database caching or background jobs
-- Simulated connection status and auth flows
-
-```mermaid
-flowchart TD
-    Component[Integration UI] --> IntHook[Integration Hook]
-    IntHook --> MockManager[Mock Integration Manager]
-    MockManager --> MockAdapter[Mock Service Adapter]
-    MockAdapter --> StaticData[Static JSON Data]
-    MockAdapter --> MockAuth[Mock Auth Simulation]
-    MockAdapter --> DelaySimulation[Artificial Delay]
-```
-
-### 4. API Route Architecture
-
-#### Current
-- Server-side execution of API routes
-- Connection to Supabase for data access
-- External API calls with credential management
-- Error handling and retry logic
-
-#### Wireframe
-- Client-side simulation of API routes where possible
-- Static data responses from API routes
-- Simulated latency for realistic behavior
-- Basic error simulation without retry logic
-
-```mermaid
-flowchart TD
-    Component[UI Component] --> APICall[API Call]
-    APICall --> MockRoute[Mock API Route]
-    MockRoute --> Delay[Artificial Delay]
-    MockRoute --> MockResponse[Static Response Data]
-    MockRoute --> ErrorSim[Error Simulation]
-    MockResponse --> Format[Response Formatting]
-```
-
-### 5. File Storage Architecture
-
-#### Current
-- Supabase Storage for file management
-- Secure URLs with token authentication
-- File upload with progress tracking
-- Access control based on user roles
-
-#### Wireframe
-- Static file references for display
-- Mock upload/download functionality
-- Predefined file URLs without tokens
-- Client-side only storage simulation
-
-```mermaid
-flowchart TD
-    FileComponent[File UI Component] --> StorageHook[Storage Hook]
-    StorageHook --> MockStorage[Mock Storage Service]
-    MockStorage --> StaticFiles[Static File References]
-    MockStorage --> UploadSim[Upload Simulation]
-    MockStorage --> DownloadSim[Download Simulation]
-```
-
-## Implementation Details
-
-### 1. Directory Structure Changes
+The wireframe implementation uses a dedicated `/lib/mock` directory for all mock implementations:
 
 ```
 frontend/
+├── app/
+│   ├── api/
+│   │   └── mock/          # Mock API routes
+│   │       ├── users/
+│   │       ├── events/
+│   │       └── equipment/
+│   ├── components/
+│   │   └── ui/
+│   │       └── WireframeIndicator.tsx  # Indicator component
+│   └── layout.tsx         # Root layout with indicator
 ├── lib/
-│   ├── mock/                        # New directory for mock implementations
-│   │   ├── data/                    # Static JSON data files
-│   │   │   ├── users.ts             # Mock user data
-│   │   │   ├── equipment.ts         # Mock equipment data
-│   │   │   ├── rentals.ts           # Mock rental data
-│   │   │   ├── events.ts            # Mock event data
-│   │   │   └── integrations/        # Mock integration data
-│   │   │       ├── google-drive.ts  # Mock Google Drive data
-│   │   │       ├── google-calendar.ts # Mock Calendar data
-│   │   │       └── google-tasks.ts  # Mock Tasks data
-│   │   ├── services/                # Mock service implementations
-│   │   │   ├── mock-auth-service.ts # Mock authentication service
-│   │   │   ├── mock-data-service.ts # Mock data access service
-│   │   │   └── mock-storage-service.ts # Mock file storage service
-│   │   └── integrations/            # Mock integration adapters
-│   │       ├── mock-integration-manager.ts # Mock integration manager
-│   │       └── adapters/            # Mock service adapters
+│   ├── mock/              # Mock implementation directory
+│   │   ├── config.ts      # Wireframe configuration
+│   │   ├── data/          # Mock data definitions
+│   │   │   ├── users.ts
+│   │   │   ├── events.ts
+│   │   │   ├── equipment.ts
+│   │   │   └── integrations/
+│   │   │       ├── google-drive.ts
+│   │   │       ├── google-calendar.ts
+│   │   │       └── google-tasks.ts
+│   │   ├── services/      # Mock service implementations
+│   │   │   ├── mock-auth-service.ts
+│   │   │   └── mock-data-service.ts
+│   │   └── integrations/  # Mock integration implementations
+│   │       ├── mock-integration-manager.ts
+│   │       └── adapters/
 │   │           ├── mock-google-workspace-adapter.ts
 │   │           └── mock-current-rms-adapter.ts
-│   ├── context/                     # React contexts
-│   │   └── auth-context.tsx         # Mock authentication context
-│   ├── hooks/                       # React hooks using mock services
-│   │   ├── use-auth.ts              # Hook for mock authentication
-│   │   ├── use-data.ts              # Hook for mock data access
-│   │   └── use-integrations.ts      # Hook for mock integrations
-│   └── utils/                       # Utility functions
-│       └── mock-helpers.ts          # Helpers for mock implementations
-├── app/
-│   ├── api/                         # API routes using mock data
-│   │   └── [...mock routes].ts      # Various mock API endpoints
-│   └── [...site pages]              # Same as before, now using mock services
-└── public/
-    └── mock-files/                  # Static mock files (images, docs, etc.)
+│   └── context/           # Application contexts
+│       └── auth-context.tsx  # Simplified auth context
+└── middleware-mock.ts     # Simplified middleware
 ```
 
-### 2. Key File Implementations
+## Core Components
 
-#### a. Auth Context Provider
+### 1. Mock Configuration
 
-```tsx
-// lib/context/auth-context.tsx
-import { createContext, useContext, useState, useEffect } from 'react';
-import { mockUsers } from '../mock/data/users';
+The wireframe uses a centralized configuration module with simplified, hardcoded values:
 
-// Create auth context
-export const AuthContext = createContext<AuthContextType>(null);
-
-// Auth provider component
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+```typescript
+// lib/mock/config.ts
+export const wireframeConfig = {
+  // Always enabled
+  enabled: true,
   
-  // On mount, check localStorage for existing session
+  // Default delay for mock operations
+  defaultDelay: 300,
+  
+  // Random failure probability (0-1)
+  failureProbability: 0.02,
+  
+  // Utility functions
+  delay: async (ms?: number): Promise<void> => {
+    return new Promise(resolve => 
+      setTimeout(resolve, ms ?? wireframeConfig.defaultDelay)
+    );
+  },
+  
+  // Simulate occasional failures
+  maybeFailRandomly: async (): Promise<void> => {
+    if (Math.random() < wireframeConfig.failureProbability) {
+      throw new Error('Simulated random failure');
+    }
+  }
+};
+```
+
+### 2. Mock Data Service
+
+A generic service for CRUD operations on mock data:
+
+```typescript
+// lib/mock/services/mock-data-service.ts
+export class MockDataService<T extends Entity> {
+  private data: T[];
+  
+  constructor(initialData: T[], entityName: string, delayMs = 300) {
+    this.data = [...initialData];
+    // ...
+  }
+  
+  // CRUD operations
+  async getAll(options): Promise<{ data: T[]; total: number }> { /*...*/ }
+  async getById(id: string): Promise<T> { /*...*/ }
+  async create(data: Partial<T>): Promise<T> { /*...*/ }
+  async update(id: string, data: Partial<T>): Promise<T> { /*...*/ }
+  async delete(id: string): Promise<void> { /*...*/ }
+  async search(query: string, fields: (keyof T)[]): Promise<T[]> { /*...*/ }
+}
+
+// Factory function for creating services
+export function createMockDataService<T extends Entity>(
+  initialData: T[],
+  entityName: string
+): MockDataService<T> {
+  return new MockDataService<T>(
+    initialData,
+    entityName,
+    wireframeConfig.defaultDelay
+  );
+}
+```
+
+### 3. Mock API Routes
+
+API routes handle HTTP requests and use mock data services:
+
+```typescript
+// app/api/mock/[entity]/route.ts
+export async function GET(request: NextRequest) {
+  // Process request
+  // Use mock data service
+  // Return response
+}
+
+export async function POST(request: NextRequest) {
+  // Process request
+  // Create with mock data service
+  // Return response
+}
+```
+
+### 4. Mock Auth Provider
+
+A simplified authentication provider using the React Context API:
+
+```typescript
+// lib/context/auth-context.tsx
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState<User | null>(null);
+  
+  // Initialize from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem('mockAuthUser');
+    const storedUser = localStorage.getItem('mockUser');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    setLoading(false);
   }, []);
   
-  // Sign in function
-  const signIn = async ({ email, password }) => {
-    // Find user in mock data
-    const mockUser = mockUsers.find(u => 
-      u.email === email && u.password === password
-    );
-    
-    if (mockUser) {
-      // Create session with expiration
-      const session = {
-        ...mockUser,
-        token: `mock-token-${Date.now()}`,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      };
-      
-      // Store in localStorage and state
-      localStorage.setItem('mockAuthUser', JSON.stringify(session));
-      setUser(session);
-      return { user: session, error: null };
-    }
-    
-    return { user: null, error: { message: 'Invalid credentials' } };
-  };
-  
-  // Sign out function
-  const signOut = async () => {
-    localStorage.removeItem('mockAuthUser');
-    setUser(null);
-    return { error: null };
-  };
-  
-  // Sign up function
-  const signUp = async ({ email, password, ...userData }) => {
-    // Create new user with defaults
-    const newUser = {
-      id: `user-${Date.now()}`,
-      email,
-      password, // In a real app, never store plaintext passwords
-      role: 'customer',
-      created_at: new Date().toISOString(),
-      ...userData
-    };
-    
-    // In real implementation, we would add to database
-    // For mock, we'll just simulate success
-    
-    return { user: newUser, error: null };
-  };
+  // Authentication methods
+  const signIn = async () => { /*...*/ };
+  const signOut = async () => { /*...*/ };
   
   return (
     <AuthContext.Provider value={{
       user,
-      loading,
       signIn,
       signOut,
-      signUp,
+      // ...other methods
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-// Hook for using auth
-export const useAuth = () => useContext(AuthContext);
 ```
 
-#### b. Mock Data Service
+### 5. Mock Integration Manager
 
-```tsx
-// lib/mock/services/mock-data-service.ts
-import { mockEquipment } from '../data/equipment';
-import { mockRentals } from '../data/rentals';
-import { mockEvents } from '../data/events';
+A singleton that manages all mock external service integrations:
 
-// Generic mock data service with CRUD operations
-export class MockDataService<T extends { id: string }> {
-  private data: T[];
-  private entityName: string;
-  
-  constructor(data: T[], entityName: string) {
-    this.data = [...data]; // Clone to avoid mutations
-    this.entityName = entityName;
-  }
-  
-  // Get all items with optional filtering
-  async getAll(filters?: Record<string, any>) {
-    // Simulate network delay
-    await this.delay();
-    
-    if (!filters) return [...this.data];
-    
-    // Apply filters
-    return this.data.filter(item => {
-      return Object.entries(filters).every(([key, value]) => {
-        return item[key] === value;
-      });
-    });
-  }
-  
-  // Get item by ID
-  async getById(id: string) {
-    await this.delay();
-    const item = this.data.find(item => item.id === id);
-    
-    if (!item) {
-      throw new Error(`${this.entityName} with ID ${id} not found`);
-    }
-    
-    return { ...item };
-  }
-  
-  // Create new item
-  async create(data: Omit<T, 'id'>) {
-    await this.delay();
-    
-    // Generate ID
-    const id = `${this.entityName.toLowerCase()}-${Date.now()}`;
-    const newItem = { ...data, id } as T;
-    
-    // In real implementation, we would add to database
-    // For mock, we'll add to in-memory array
-    this.data.push(newItem);
-    
-    return { ...newItem };
-  }
-  
-  // Update item
-  async update(id: string, data: Partial<T>) {
-    await this.delay();
-    
-    const index = this.data.findIndex(item => item.id === id);
-    if (index === -1) {
-      throw new Error(`${this.entityName} with ID ${id} not found`);
-    }
-    
-    // Update item
-    this.data[index] = { ...this.data[index], ...data };
-    
-    return { ...this.data[index] };
-  }
-  
-  // Delete item
-  async delete(id: string) {
-    await this.delay();
-    
-    const index = this.data.findIndex(item => item.id === id);
-    if (index === -1) {
-      throw new Error(`${this.entityName} with ID ${id} not found`);
-    }
-    
-    // Remove item
-    this.data.splice(index, 1);
-    
-    return { success: true };
-  }
-  
-  // Helper for simulating network delay
-  private async delay(ms = 300) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-}
-
-// Export pre-configured services
-export const equipmentService = new MockDataService(mockEquipment, 'Equipment');
-export const rentalService = new MockDataService(mockRentals, 'Rental');
-export const eventService = new MockDataService(mockEvents, 'Event');
-```
-
-#### c. Mock Integration Manager
-
-```tsx
+```typescript
 // lib/mock/integrations/mock-integration-manager.ts
-import { MockGoogleWorkspaceAdapter } from './adapters/mock-google-workspace-adapter';
-import { MockCurrentRMSAdapter } from './adapters/mock-current-rms-adapter';
-
-// Mock implementation of the integration manager
 export class MockIntegrationManager {
   private static instance: MockIntegrationManager;
   private adapters: Record<string, any> = {};
   
   private constructor() {
-    // Initialize with mock adapters
+    // Initialize adapters
     this.adapters.googleWorkspace = new MockGoogleWorkspaceAdapter();
-    this.adapters.currentRMS = new MockCurrentRMSAdapter();
+    // ...other adapters
   }
   
-  // Singleton pattern
   public static getInstance(): MockIntegrationManager {
     if (!MockIntegrationManager.instance) {
       MockIntegrationManager.instance = new MockIntegrationManager();
@@ -422,189 +220,160 @@ export class MockIntegrationManager {
     return MockIntegrationManager.instance;
   }
   
-  // Get adapter by name
   public getAdapter<T>(name: string): T {
-    if (!this.adapters[name]) {
-      throw new Error(`Adapter '${name}' not found`);
-    }
     return this.adapters[name] as T;
   }
-  
-  // Get connection status for all adapters
-  public getConnectionStatus() {
-    return {
-      googleWorkspace: {
-        connected: true,
-        lastSync: new Date().toISOString(),
-        error: null
-      },
-      currentRMS: {
-        connected: true,
-        lastSync: new Date().toISOString(),
-        error: null
-      }
-    };
-  }
-}
-
-// Export singleton instance
-export const mockIntegrationManager = MockIntegrationManager.getInstance();
-```
-
-#### d. API Route Example
-
-```tsx
-// app/api/equipment/route.ts
-import { mockEquipment } from '@/lib/mock/data/equipment';
-
-export async function GET(req: Request) {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  // Get query parameters
-  const url = new URL(req.url);
-  const category = url.searchParams.get('category');
-  const search = url.searchParams.get('search');
-  
-  // Filter data based on parameters
-  let data = [...mockEquipment];
-  
-  if (category) {
-    data = data.filter(item => item.category === category);
-  }
-  
-  if (search) {
-    const searchLower = search.toLowerCase();
-    data = data.filter(item => 
-      item.name.toLowerCase().includes(searchLower) || 
-      item.description?.toLowerCase().includes(searchLower)
-    );
-  }
-  
-  return Response.json({ 
-    data,
-    count: data.length
-  });
-}
-
-export async function POST(req: Request) {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  try {
-    const body = await req.json();
-    
-    // Generate ID
-    const id = `equip-${Date.now()}`;
-    const newEquipment = { ...body, id };
-    
-    // In a real implementation, we would add to the database
-    // For mock, we'll just return success with the new item
-    
-    return Response.json({ 
-      data: newEquipment,
-      success: true
-    });
-  } catch (error) {
-    return Response.json(
-      { error: 'Invalid request' },
-      { status: 400 }
-    );
-  }
 }
 ```
 
-## Next.js Configuration Changes
+### 6. Middleware
 
-### 1. Environment Variables
-
-Replace Supabase and external API environment variables with mock flags:
-
-```
-# .env.local
-NEXT_PUBLIC_MOCK_ENABLED=true
-NEXT_PUBLIC_MOCK_DELAY=300
-```
-
-### 2. next.config.ts Updates
+Simplified middleware that always redirects to mock API routes:
 
 ```typescript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: [
-      'example.com',
-      'lh3.googleusercontent.com',
-      'localhost'
-    ],
-  },
-  // Static exports option could be enabled for fully static builds
-  // output: 'export',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
-
-module.exports = nextConfig;
+// middleware-mock.ts
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Check if it's an API request (not to mock API)
+  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/mock/')) {
+    // Extract the entity path
+    const path = pathname.replace('/api/', '');
+    
+    // Rewrite to mock API
+    return NextResponse.rewrite(new URL(`/api/mock/${path}`, request.url));
+  }
+  
+  return NextResponse.next();
+}
 ```
 
-## Page Implementation Strategy
+### 7. Wireframe Indicator
 
-All pages will keep their current structure but will be updated to use mock services instead of real ones:
-
-1. **Authentication Pages**: Use mock auth context instead of Supabase Auth
-2. **Dashboard Pages**: Use mock data services instead of Supabase queries
-3. **Integration Pages**: Use mock integration adapters instead of real ones
-4. **Profile Pages**: Maintain UI but connect to mock user data
+A visual indicator showing the application is in wireframe/demo mode:
 
 ```tsx
-// Example of converted dashboard page
-import { useAuth } from '@/lib/hooks/use-auth';
-import { useMockData } from '@/lib/hooks/use-mock-data';
-
-export default function DashboardPage() {
-  const { user } = useAuth();
-  const { data: events, loading } = useMockData('events');
-  
-  if (loading) return <LoadingSpinner />;
-  
+// app/components/ui/WireframeIndicator.tsx
+export default function WireframeIndicator() {
   return (
-    <DashboardLayout>
-      <h1>Welcome, {user?.name}</h1>
-      <EventsList events={events} />
-      {/* Rest of the dashboard UI */}
-    </DashboardLayout>
+    <div className="fixed bottom-0 left-0 w-full bg-yellow-100 text-yellow-800 py-2 px-4 text-center text-sm z-50 shadow-md">
+      <p className="font-medium">
+        <span className="inline-block mr-2">💡</span>
+        <span>Investor Demo Mode - Using Mock Data</span>
+        <span className="inline-block ml-2">💡</span>
+      </p>
+    </div>
   );
 }
 ```
 
-## Deployment Considerations
+## Request Flow
 
-### Vercel Deployment
+The request flow in the wireframe-only implementation is simplified:
 
-The wireframe version will be simpler to deploy to Vercel:
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant Middleware
+    participant MockAPI as Mock API Routes
+    participant MockService as Mock Data Services
+    participant MockData as Mock Data
 
-1. **No Backend Dependencies**: No Supabase or external service connections required
-2. **Environment Variables**: Only basic Next.js configuration needed
-3. **Build Optimization**: Faster builds without database migrations
-4. **Preview Deployments**: Easier to set up preview environments
+    User->>Browser: Interacts with UI
+    Browser->>Middleware: Sends API request
+    Middleware->>MockAPI: Redirects to mock API
+    MockAPI->>MockService: Calls mock service
+    MockService->>MockData: Retrieves/updates mock data
+    MockService-->>MockAPI: Returns data (with delay)
+    MockAPI-->>Browser: Returns HTTP response
+    Browser-->>User: Updates UI
+```
 
-### Potential Optimizations
+## Data Flow
 
-1. **Static Generation**: Consider using `next export` for fully static generation
-2. **Image Optimization**: Pre-optimize mock images for faster loading
-3. **Bundle Size**: Remove unused dependencies related to Supabase and external APIs
-4. **Caching**: Implement aggressive caching for static mock data
+Data flows through the wireframe implementation as follows:
 
-## Migration Steps
+```mermaid
+flowchart TD
+    Component[UI Component] -->|useState/useEffect| FetchHook[Fetch Hook]
+    FetchHook -->|fetch request| MockAPI[Mock API Route]
+    MockAPI -->|service call| DataService[Mock Data Service]
+    DataService -->|read/write| MockData[Mock Data]
+    MockData -->|filtered data| DataService
+    DataService -->|processed data| MockAPI
+    MockAPI -->|JSON response| FetchHook
+    FetchHook -->|update state| Component
+```
 
-1. Create the mock directory structure
-2. Implement core mock services (auth, data, storage)
-3. Create static JSON data files
-4. Update API routes to use mock data
-5. Convert UI components to use mock services
-6. Update Next.js configuration
-7. Test deployment to Vercel
+## Key Simplifications
 
-This architecture provides a complete blueprint for converting the FOHP application into a wireframe version that maintains visual fidelity and user experience while removing backend dependencies.
+The wireframe-only approach includes several key simplifications:
+
+1. **Direct Import Pattern**: Direct imports of mock services without conditional logic
+   ```typescript
+   import { mockAuthService } from '@/lib/mock/services/mock-auth-service';
+   ```
+
+2. **Hardcoded Configuration**: Configuration values are hardcoded rather than dynamically determined
+   ```typescript
+   export const wireframeConfig = {
+     enabled: true,
+     // Other configurations...
+   };
+   ```
+
+3. **Always-Redirect Middleware**: Middleware always redirects to mock implementations
+   ```typescript
+   if (isApiRequest) {
+     // Always redirect to mock API
+     return NextResponse.rewrite(new URL(`/api/mock${path}`, request.url));
+   }
+   ```
+
+4. **No Dual-Mode Support**: No code for supporting both real and mock modes
+   ```typescript
+   // Removed conditional logic for dual-mode support
+   ```
+
+## Authentication Architecture
+
+Authentication flow is simplified to use localStorage for session persistence:
+
+```mermaid
+flowchart TD
+    LoginComponent[Login Component] -->|signIn| AuthContext[Auth Context]
+    AuthContext -->|verifyCredentials| MockAuthService[Mock Auth Service]
+    MockAuthService -->|validate| MockUserData[Mock User Data]
+    MockUserData -->|user or error| MockAuthService
+    MockAuthService -->|store user| LocalStorage[localStorage]
+    MockAuthService -->|update state| AuthContext
+    AuthContext -->|auth state| ProtectedComponent[Protected Component]
+```
+
+## Benefits of the Wireframe-Only Architecture
+
+1. **Simplified Implementation**: Easier to understand, develop, and maintain
+2. **Consistent Behavior**: Predictable behavior without external dependencies
+3. **Improved Performance**: No external API calls or authentication delays
+4. **Complete Control**: Fine-grained control over all aspects of the application
+5. **Focused Purpose**: Optimized specifically for investor demonstrations
+
+## Limitations
+
+1. **Not Production-Ready**: The wireframe implementation is not suitable for production use
+2. **Limited Functionality**: Some complex interactions may be simplified
+3. **Static Data**: Data changes don't persist across sessions (unless manually saved to localStorage)
+
+## Extension Points
+
+While the current implementation focuses on core functionality, the architecture can be extended:
+
+1. **Additional Mock Services**: Add more mock services for new features
+2. **Enhanced Visualization**: Add more visual indicators for mockups of future features
+3. **Persistent State**: Add localStorage persistence for more state if needed
+4. **MockQL Layer**: Add a GraphQL mock layer to simulate rich data querying
+
+## Conclusion
+
+The wireframe-only architecture provides a clean, maintainable implementation for investor demonstrations. By removing the complexity of supporting both real and mock modes, the codebase is simpler and more focused on its specific purpose.

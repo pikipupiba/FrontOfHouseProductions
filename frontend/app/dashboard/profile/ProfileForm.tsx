@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import wireframeConfig from '@/lib/mock/config'
 
 type ProfileType = {
   id: string
@@ -16,15 +16,6 @@ type ProfileType = {
   updated_at: string
 }
 
-type UserRoleType = {
-  id: string
-  user_id: string
-  role: string
-  is_approved: boolean
-  created_at: string
-  updated_at: string
-}
-
 export default function ProfileForm({ 
   user, 
   profile 
@@ -33,7 +24,6 @@ export default function ProfileForm({
   profile: ProfileType | null
 }) {
   const router = useRouter()
-  const supabase = createBrowserClient()
   
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -42,35 +32,20 @@ export default function ProfileForm({
     role: profile?.role || 'customer', // Default initialization
     phone: profile?.phone || '',
   })
-  const [userRole, setUserRole] = useState<UserRoleType | null>(null)
-  const [originalRole, setOriginalRole] = useState('customer')
+  const [originalRole, setOriginalRole] = useState(profile?.role || 'customer')
   const [isRoleChangeRequested, setIsRoleChangeRequested] = useState(false)
   
-  // Fetch user role from the user_roles table
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user?.id) return
-      
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (error) {
-        console.error('Error fetching user role:', error)
-        return
-      }
-      
-      if (data) {
-        setUserRole(data)
-        setFormData(prev => ({ ...prev, role: data.role }))
-        setOriginalRole(data.role)
-      }
+    // Update formData if profile changes
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || '',
+        role: profile.role || 'customer',
+        phone: profile.phone || '',
+      })
+      setOriginalRole(profile.role || 'customer')
     }
-    
-    fetchUserRole()
-  }, [user, supabase])
+  }, [profile])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -85,136 +60,63 @@ export default function ProfileForm({
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   
-  const createRoleChangeRequest = async () => {
-    if (!userRole) return
-    
-    try {
-      const { error } = await supabase
-        .from('user_role_requests')
-        .insert({
-          user_id: user.id,
-          requested_role: formData.role,
-          previous_role: originalRole, // Changed from current_role to previous_role
-          notes: `User requested role change from ${originalRole} to ${formData.role}`
-        })
-      
-      if (error) throw error
-      
-      return true
-    } catch (error: any) {
-      console.error('Error creating role change request:', error)
-      setMessage(`Error requesting role change: ${error.message}`)
-      return false
-    }
-  }
-  
-  const setRoleDirectly = async (role: string) => {
-    setLoading(true)
-    try {
-      // First check if a user_role record exists
-      const { data } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      let error;
-      
-      // If a record exists, update it
-      if (data?.id) {
-        const result = await supabase
-          .from('user_roles')
-          .update({
-            role: role,
-            is_approved: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-          
-        error = result.error;
-      } else {
-        // If no record exists, insert one
-        const result = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: role,
-            is_approved: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          
-        error = result.error;
-      }
-      
-      if (error) throw error;
-      
-      setMessage(`Role updated to ${role} successfully!`);
-      setFormData(prev => ({ ...prev, role }));
-      setOriginalRole(role);
-      
-      // Redirect to the appropriate dashboard based on role
-      if (role === 'employee') {
-        window.location.href = "/dashboard/employee";
-      } else if (role === 'manager') {
-        window.location.href = "/dashboard/manager";
-      } else {
-        window.location.href = "/dashboard/customer";
-      }
-    } catch (error: any) {
-      setMessage(`Error setting role: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
     
     try {
-      // Always update profile information - REMOVED ROLE FIELD COMPLETELY
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          full_name: formData.full_name,
-          phone: formData.phone,
-          updated_at: new Date().toISOString(),
-        })
+      // Simulate network delay
+      await wireframeConfig.delay(800);
       
-      if (profileError) throw profileError
+      // Get current user data
+      const storedUser = localStorage.getItem('mockUser')
+      if (!storedUser) {
+        throw new Error('User session not found')
+      }
+      
+      // Parse and update the user data
+      const userData = JSON.parse(storedUser)
+      
+      // Split full name into first and last name (simplified)
+      let firstName = userData.firstName
+      let lastName = userData.lastName
+      
+      if (formData.full_name) {
+        const nameParts = formData.full_name.trim().split(' ')
+        firstName = nameParts[0] || ''
+        lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+      }
+      
+      // Update user data
+      const updatedUser = {
+        ...userData,
+        firstName,
+        lastName,
+        phoneNumber: formData.phone,
+      }
       
       // Handle role change if requested
       if (isRoleChangeRequested) {
-        // If changing to a non-customer role, create a request
-        if (formData.role !== 'customer') {
-          const requestCreated = await createRoleChangeRequest()
-          if (requestCreated) {
-            setMessage('Profile updated successfully! Your role change request has been submitted for approval.')
-          } else {
-            setMessage('Profile updated successfully, but we encountered an issue with your role change request.')
-          }
-        } else {
-          // If changing to customer role, update directly (this is always allowed)
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .update({ 
-              role: 'customer',
-              is_approved: true,
-              updated_at: new Date().toISOString() 
-            })
-            .eq('user_id', user.id)
-          
-          if (roleError) throw roleError
-          setMessage('Profile updated successfully!')
-        }
+        // In the wireframe version, we allow immediate role changes
+        updatedUser.role = formData.role
+        
+        // Add success message
+        setMessage(`Profile updated and role changed to ${formData.role} successfully!`)
+        
+        // Update original role to the new role
+        setOriginalRole(formData.role)
+        
+        // Reset role change request flag
+        setIsRoleChangeRequested(false)
       } else {
         setMessage('Profile updated successfully!')
       }
       
+      // Save updated user data to localStorage
+      localStorage.setItem('mockUser', JSON.stringify(updatedUser))
+      
+      // Refresh the page to show updates
       router.refresh()
     } catch (error: any) {
       setMessage(`Error updating profile: ${error.message}`)
@@ -223,17 +125,67 @@ export default function ProfileForm({
     }
   }
   
-  // Check if user is authenticated with Google
-  const isGoogleUser = user?.app_metadata?.provider === 'google' || false
+  // Check if user is authenticated with Google (mock implementation)
+  const isGoogleUser = user?.avatarUrl?.includes('pravatar') || false
+  
+  // Function to directly change role and navigate to appropriate dashboard
+  const setRoleDirectly = async (role: string) => {
+    setLoading(true)
+    
+    try {
+      // Simulate network delay
+      await wireframeConfig.delay(600);
+      
+      // Get current user data
+      const storedUser = localStorage.getItem('mockUser')
+      if (!storedUser) {
+        throw new Error('User session not found')
+      }
+      
+      // Parse and update the user data
+      const userData = JSON.parse(storedUser)
+      
+      // Update role
+      const updatedUser = {
+        ...userData,
+        role: role
+      }
+      
+      // Save updated user data to localStorage
+      localStorage.setItem('mockUser', JSON.stringify(updatedUser))
+      
+      // Set form data to reflect the new role
+      setFormData(prev => ({ ...prev, role }))
+      
+      // Update original role
+      setOriginalRole(role)
+      
+      // Show success message
+      setMessage(`Role updated to ${role} successfully!`)
+      
+      // Redirect to the appropriate dashboard based on role
+      if (role === 'employee') {
+        router.push('/dashboard/employee')
+      } else if (role === 'manager') {
+        router.push('/dashboard/manager')
+      } else {
+        router.push('/dashboard/customer')
+      }
+    } catch (error: any) {
+      setMessage(`Error setting role: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Profile Picture */}
-      {(user?.user_metadata?.avatar_url || profile?.avatar_url) && (
+      {user?.avatarUrl && (
         <div className="flex flex-col items-center mb-4">
           <div className="relative w-24 h-24 rounded-full overflow-hidden mb-2">
             <Image 
-              src={user?.user_metadata?.avatar_url || profile?.avatar_url || ''} 
+              src={user.avatarUrl} 
               alt="Profile picture"
               fill
               className="object-cover"
@@ -321,14 +273,14 @@ export default function ProfileForm({
             <option value="employee">Employee</option>
             <option value="manager">Manager</option>
           </select>
-          {isRoleChangeRequested && formData.role !== 'customer' && (
+          {isRoleChangeRequested && (
             <p className="mt-1 text-xs text-amber-600">
-              Your request to change to {formData.role} role will require approval by administrators
+              Changing your role will affect your dashboard view and permissions
             </p>
           )}
           {!isRoleChangeRequested && (
             <p className="mt-1 text-xs text-gray-500">
-              Role changes may require approval by administrators
+              Your account type determines what features you can access
             </p>
           )}
         </div>
@@ -366,31 +318,43 @@ export default function ProfileForm({
         </button>
       </div>
       
-      {/* Developer Tools Section - only for development */}
+      {/* Role Switcher Section */}
       <div className="mt-8 p-4 border border-gray-200 rounded-md bg-gray-50">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Developer Tools</h3>
-        <p className="text-sm text-gray-500 mb-4">Set role directly for testing (bypasses approval)</p>
-        <div className="flex space-x-2">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Quick Role Switcher</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          For demo purposes, you can quickly switch between different portal views
+        </p>
+        <div className="grid grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => setRoleDirectly('customer')}
-            className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+            className="px-3 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 flex flex-col items-center"
           >
-            Set Customer
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Customer Portal
           </button>
           <button
             type="button"
             onClick={() => setRoleDirectly('employee')}
-            className="px-3 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200"
+            className="px-3 py-2 bg-green-100 text-green-800 rounded hover:bg-green-200 flex flex-col items-center"
           >
-            Set Employee
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Employee Portal
           </button>
           <button
             type="button"
             onClick={() => setRoleDirectly('manager')}
-            className="px-3 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200"
+            className="px-3 py-2 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 flex flex-col items-center"
           >
-            Set Manager
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Manager Portal
           </button>
         </div>
       </div>

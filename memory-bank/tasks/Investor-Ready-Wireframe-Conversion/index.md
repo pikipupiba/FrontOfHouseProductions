@@ -14,6 +14,19 @@ This memory bank contains all information related to the Investor-Ready-Wirefram
 6. [Decision Log](decision_log.md) - Document key decisions during implementation
 7. [Task Rules](task_rules.md) - Guidelines for maintaining visual fidelity
 
+## Current Status
+
+Implementation Phase - Transitioning to Wireframe-Only Approach
+
+## Recent Updates
+
+- Pivoted from dual-mode approach to wireframe-only implementation
+- Removed environment variable checks for simpler, cleaner codebase
+- Hardcoded wireframe mode as the only operating mode
+- Updated mock API routes for users and events
+- Added wireframe indicator component to clearly show demo mode
+- Simplified middleware to always redirect to mock API routes
+
 ## Task Overview
 
 The Front of House Productions (FOHP) web application is currently a fully-functional system with authentication, database connections, and third-party integrations. For investor presentations, we need a simplified version that:
@@ -57,28 +70,26 @@ The wireframe will simulate interfaces for both current and planned features inc
 - Emergency action plan generator
 - Approval system for purchases
 
-## Key Files from Main Project
+## Key Files Implemented/Modified
 
-Key files that will need modification:
+- **Configuration**:
+  - `frontend/lib/mock/config.ts` - Simplified to always use wireframe mode
+  - `frontend/middleware-mock.ts` - Updated to always redirect to mock APIs
+  - `frontend/next.config.ts` - Simplified for wireframe-only approach
+  - `frontend/package.json` - Removed dual-mode scripts
 
-- **Auth-related**:
-  - `frontend/lib/services/auth-service.ts`
-  - `frontend/lib/services/server-auth-service.ts`
-  - `frontend/app/auth/callback/route.ts`
-  - `frontend/lib/types/auth.ts`
+- **Mock API Routes**:
+  - `frontend/app/api/mock/users/route.ts` - User data API
+  - `frontend/app/api/mock/events/route.ts` - Event data API
+  - `frontend/app/api/mock/equipment/route.ts` - Equipment data API
 
-- **Database-related**:
-  - `frontend/lib/supabase/client.ts`
-  - `frontend/lib/supabase/server.ts`
-  - All migration files in `frontend/supabase/migrations/`
+- **Components**:
+  - `frontend/app/components/ui/WireframeIndicator.tsx` - Added indicator component
+  - `frontend/app/layout.tsx` - Updated to include wireframe indicator
 
-- **Integration-related**:
-  - `frontend/lib/integrations/` directory
-  - Integration-specific API routes
+## Next Steps
 
-## Related Memory Bank Files
-
-- [projectbrief.md](../../projectbrief.md) - Original project requirements
-- [systemPatterns.md](../../systemPatterns.md) - System architecture that will be simplified
-- [techContext.md](../../techContext.md) - Technical stack details
-- [activeContext.md](../../activeContext.md) - Current project context
+- Continue implementing remaining mock API routes
+- Update UI components to use mock data services directly
+- Remove unnecessary real service imports
+- Update documentation for wireframe-only approach
