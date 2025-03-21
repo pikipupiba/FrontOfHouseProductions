@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect MCP Servers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 20px;
+        }
+        ol {
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .note {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            margin: 15px 0;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Connecting MCP Servers in VSCode</h1>
+    
+    <div class="note">
+        <p>You currently have 5 MCP servers configured in your settings file, but only 2 are actively connected to your session.</p>
+    </div>
+    
+    <h2>To Connect All MCP Servers:</h2>
+    
+    <ol>
+        <li>
+            <strong>Close any running MCP server processes:</strong>
+            <ul>
+                <li>Press <kbd>Ctrl+Shift+Esc</kbd> to open Task Manager</li>
+                <li>Look for any running 'node.exe' or 'supabase-mcp-server.exe' processes</li>
+                <li>End these processes if present</li>
+            </ul>
+        </li>
+        <li>
+            <strong>In VSCode, reload the window:</strong>
+            <ul>
+                <li>Press <kbd>Ctrl+Shift+P</kbd> to open the command palette</li>
+                <li>Type 'Developer: Reload Window' and select it</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Restart the Cline extension:</strong>
+            <ul>
+                <li>Press <kbd>Ctrl+Shift+P</kbd> to open the command palette</li>
+                <li>Type 'Cline: Restart Extension' and select it</li>
+            </ul>
+        </li>
+    </ol>
+    
+    <div class="warning">
+        <p><strong>Important:</strong> After reloading, you'll need to start a new conversation with Cline to access the newly connected MCP servers.</p>
+    </div>
+    
+    <h2>Configured MCP Servers:</h2>
+    
+    <ol>
+        <li><strong>Supabase MCP Server</strong> (github.com/alexander-zuev/supabase-mcp-server)</li>
+        <li><strong>Browser Tools MCP</strong> (github.com/AgentDeskAI/browser-tools-mcp)</li>
+        <li><strong>Software Planning MCP</strong> (github.com/NightTrek/Software-planning-mcp)</li>
+        <li><strong>GitHub MCP Server</strong> (github.com/modelcontextprotocol/servers/tree/main/src/github)</li>
+        <li><strong>Filesystem MCP Server</strong> (github.com/modelcontextprotocol/servers/tree/main/src/filesystem)</li>
+    </ol>
+    
+    <div class="note">
+        <p>Currently Connected: Supabase MCP Server and Software Planning MCP</p>
+    </div>
+</body>
+</html>
